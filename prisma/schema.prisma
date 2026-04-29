@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Category {
+  OTOMOBIL
+  SUV
+  MOTOSIKLET
+}
+
+enum SentimentType {
+  COMPLAINT
+  POSITIVE
+  TIP
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String?
+  image        String?
+  ownedCar     String?
+  createdAt    DateTime  @default(now())
+  posts        Post[]
+  comments     Comment[]
+  votes        Vote[]
+}
+
+model Post {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  category      Category
+  brand         String
+  model         String
+  year          Int
+  fuelType      String
+  kmUsed        String
+  usagePeriod   String
+  sentimentType SentimentType
+  isChronik     Boolean       @default(false)
+  title         String
+  body          String        @db.Text
+  tags          String[]
+  thumbsUp      Int           @default(0)
+  thumbsDown    Int           @default(0)
+  viewCount     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  comments      Comment[]
+  votes         Vote[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Vote {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  type   String
+
+  @@unique([postId, userId])
+}
