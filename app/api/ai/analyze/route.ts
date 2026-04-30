@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   });
 
   const postsText = posts
-    .map((p) => `[${p.sentimentType}] ${p.title}: ${p.body}`)
+    .map((p: { sentimentType: string; title: string; body: string }) => `[${p.sentimentType}] ${p.title}: ${p.body}`)
     .join("\n\n");
 
   const message = await anthropic.messages.create({
