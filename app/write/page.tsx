@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { markalariGetir, kasayiBul, type Marka } from "@/lib/vehicles";
 
-const BRANDS = ["TOGG", "Renault", "Honda", "Volkswagen", "Dacia", "Hyundai", "BMW", "Toyota", "Ford", "Skoda", "Mitsubishi", "Yamaha", "Diğer"];
 const FUEL_TYPES = ["Benzin", "Dizel", "Elektrik", "Hibrit", "LPG"];
-const YEARS = Array.from({ length: 15 }, (_, i) => 2025 - i);
+const CATEGORIES = [
+  { value: "OTOMOBIL", label: "Otomobil", emoji: "🚗" },
+  { value: "MOTOSIKLET", label: "Motosiklet", emoji: "🏍️" },
+  { value: "TICARI", label: "Ticari Araç", emoji: "🚚" },
+];
 
 export default function WritePage() {
   const { data: session, status } = useSession();
@@ -38,6 +42,27 @@ export default function WritePage() {
   if (status === "loading" || !session) return null;
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const markalar: Marka[] = useMemo(
+    () => (form.category ? markalariGetir(form.category as "OTOMOBIL" | "MOTOSIKLET" | "TICARI") : []),
+    [form.category]
+  );
+
+  const seciliMarka = markalar.find((m) => m.marka === form.brand);
+  const modeller = seciliMarka?.modeller ?? [];
+  const seciliModel = modeller.find((m) => m.model === form.model);
+
+  const tumYillar = useMemo(() => {
+    if (!seciliModel) return [];
+    const set = new Set<number>();
+    seciliModel.kasalar.forEach((k) => k.yillar.forEach((y) => set.add(y)));
+    return Array.from(set).sort((a, b) => b - a);
+  }, [seciliModel]);
+
+  const kasaResim = useMemo(() => {
+    if (!form.brand || !form.model || !form.year) return null;
+    return kasayiBul(form.brand, form.model, parseInt(form.year));
+  }, [form.brand, form.model, form.year]);
 
   const handleEnhance = async () => {
     setEnhancing(true);
@@ -98,22 +123,18 @@ export default function WritePage() {
             <div>
               <h2 className="text-lg font-bold mb-4">Kategori Seçin</h2>
               <div className="grid grid-cols-3 gap-4">
-                {[
-                  { value: "OTOMOBIL", label: "🚗 Otomobil" },
-                  { value: "SUV", label: "🚙 SUV" },
-                  { value: "MOTOSIKLET", label: "🏍️ Motosiklet" },
-                ].map((cat) => (
+                {CATEGORIES.map((cat) => (
                   <button
                     key={cat.value}
-                    onClick={() => { set("category", cat.value); setStep(2); }}
+                    onClick={() => { set("category", cat.value); set("brand", ""); set("model", ""); set("year", ""); setStep(2); }}
                     className={`border-2 rounded-lg p-4 text-center font-semibold transition-colors ${
                       form.category === cat.value
                         ? "border-[#d0021b] bg-red-50 text-[#d0021b]"
                         : "border-gray-200 hover:border-[#d0021b] hover:bg-red-50"
                     }`}
                   >
-                    <div className="text-3xl mb-2">{cat.label.split(" ")[0]}</div>
-                    <div className="text-sm">{cat.label.split(" ").slice(1).join(" ")}</div>
+                    <div className="text-3xl mb-2">{cat.emoji}</div>
+                    <div className="text-sm">{cat.label}</div>
                   </button>
                 ))}
               </div>
@@ -124,25 +145,67 @@ export default function WritePage() {
           {step === 2 && (
             <div className="space-y-4">
               <h2 className="text-lg font-bold mb-4">Araç Bilgileri</h2>
+
+              {/* Brand */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Marka</label>
+                <select
+                  value={form.brand}
+                  onChange={(e) => { set("brand", e.target.value); set("model", ""); set("year", ""); }}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]"
+                >
+                  <option value="">Marka seçiniz</option>
+                  {markalar.map((m) => <option key={m.marka} value={m.marka}>{m.marka}</option>)}
+                </select>
+              </div>
+
+              {/* Model */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                <select
+                  value={form.model}
+                  onChange={(e) => { set("model", e.target.value); set("year", ""); }}
+                  disabled={!form.brand}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b] disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">Model seçiniz</option>
+                  {modeller.map((m) => <option key={m.model} value={m.model}>{m.model}</option>)}
+                </select>
+              </div>
+
+              {/* Year */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Yıl</label>
+                <select
+                  value={form.year}
+                  onChange={(e) => set("year", e.target.value)}
+                  disabled={!form.model}
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b] disabled:bg-gray-50 disabled:text-gray-400"
+                >
+                  <option value="">Yıl seçiniz</option>
+                  {tumYillar.map((y) => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+
+              {/* Generation photo preview */}
+              {kasaResim && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="bg-gray-50 px-3 py-1.5 flex items-center gap-2 border-b border-gray-200">
+                    <span className="text-xs font-semibold text-gray-600">{form.brand} {form.model}</span>
+                    <span className="text-xs text-gray-400">• {kasaResim.kod} ({kasaResim.yillar[0]}–{kasaResim.yillar[kasaResim.yillar.length - 1]})</span>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={kasaResim.resim}
+                    alt={`${form.brand} ${form.model} ${kasaResim.kod}`}
+                    className="w-full h-44 object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+
+              {/* Fuel, km, period */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Marka</label>
-                  <select value={form.brand} onChange={(e) => set("brand", e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]">
-                    <option value="">Seçiniz</option>
-                    {BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                  <input type="text" value={form.model} onChange={(e) => set("model", e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]" placeholder="Örn: T10X" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Yıl</label>
-                  <select value={form.year} onChange={(e) => set("year", e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]">
-                    <option value="">Seçiniz</option>
-                    {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-                  </select>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Yakıt Tipi</label>
                   <select value={form.fuelType} onChange={(e) => set("fuelType", e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]">
@@ -154,11 +217,12 @@ export default function WritePage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">KM</label>
                   <input type="text" value={form.kmUsed} onChange={(e) => set("kmUsed", e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]" placeholder="Örn: 25000 km" />
                 </div>
-                <div>
+                <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Kullanım Süresi</label>
                   <input type="text" value={form.usagePeriod} onChange={(e) => set("usagePeriod", e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#d0021b]" placeholder="Örn: 1 yıl 6 ay" />
                 </div>
               </div>
+
               <div className="flex justify-between mt-2">
                 <button onClick={() => setStep(1)} className="px-4 py-2 border rounded text-sm hover:bg-gray-50">← Geri</button>
                 <button

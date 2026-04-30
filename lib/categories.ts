@@ -1,19 +1,19 @@
 export const CATEGORY_SLUG: Record<string, string> = {
   otomobil: "OTOMOBIL",
-  suv: "SUV",
   motosiklet: "MOTOSIKLET",
+  ticari: "TICARI",
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {
   OTOMOBIL: "Otomobil",
-  SUV: "Arazi / SUV",
   MOTOSIKLET: "Motosiklet",
+  TICARI: "Ticari Araç",
 };
 
 export const CATEGORY_EMOJI: Record<string, string> = {
   OTOMOBIL: "🚗",
-  SUV: "🚙",
   MOTOSIKLET: "🏍️",
+  TICARI: "🚚",
 };
 
 export const SENTIMENT_LABEL: Record<string, string> = {
@@ -42,7 +42,6 @@ export function categoryToSlug(cat: string): string {
   return Object.entries(CATEGORY_SLUG).find(([, v]) => v === cat)?.[0] || cat.toLowerCase();
 }
 
-// deterministic car image using loremflickr (real car photos, consistent seed)
 export function carImageUrl(brand: string, model: string): string {
   let hash = 0;
   for (const c of `${brand}${model}`) hash = (hash * 31 + c.charCodeAt(0)) & 0xfffffff;

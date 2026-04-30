@@ -13,8 +13,8 @@ type Stats = {
 
 const CAT_CARDS = [
   { slug: "otomobil", label: "Otomobil", emoji: "🚗", desc: "Binek araç deneyimleri", bg: "bg-blue-50 border-blue-200" },
-  { slug: "suv", label: "Arazi / SUV", emoji: "🚙", desc: "SUV ve arazi araçları", bg: "bg-green-50 border-green-200" },
   { slug: "motosiklet", label: "Motosiklet", emoji: "🏍️", desc: "Motosiklet deneyimleri", bg: "bg-orange-50 border-orange-200" },
+  { slug: "ticari", label: "Ticari Araç", emoji: "🚚", desc: "Ticari araç deneyimleri", bg: "bg-green-50 border-green-200" },
 ];
 
 export default function Home() {

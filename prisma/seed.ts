@@ -57,7 +57,7 @@ async function main() {
       tags: ["Hibrit", "Yakit", "DSG"],
     },
     {
-      userId: murat.id, category: "SUV" as const, brand: "Dacia", model: "Duster", year: 2021,
+      userId: murat.id, category: "OTOMOBIL" as const, brand: "Dacia", model: "Duster", year: 2021,
       fuelType: "Benzin", kmUsed: "62000 km", usagePeriod: "3 yıl",
       sentimentType: "TIP" as const, isChronik: false, thumbsUp: 43,
       title: "Duster 4x4 arazi için mükemmel ama otoyol konforu zayıf",
@@ -65,7 +65,7 @@ async function main() {
       tags: ["Arazi", "Gurultu", "Konfor", "FiyatDeger"],
     },
     {
-      userId: ayse.id, category: "SUV" as const, brand: "Hyundai", model: "Tucson", year: 2022,
+      userId: ayse.id, category: "OTOMOBIL" as const, brand: "Hyundai", model: "Tucson", year: 2022,
       fuelType: "Benzin", kmUsed: "33000 km", usagePeriod: "20 ay",
       sentimentType: "COMPLAINT" as const, isChronik: true, thumbsUp: 34,
       title: "Soğuk havada CVVT valf sesi çok rahatsız edici",
@@ -121,7 +121,7 @@ async function main() {
       tags: ["Bagaj", "Konfor", "Dizel", "FiyatPerformans"],
     },
     {
-      userId: murat.id, category: "SUV" as const, brand: "Mitsubishi", model: "Outlander", year: 2023,
+      userId: murat.id, category: "OTOMOBIL" as const, brand: "Mitsubishi", model: "Outlander", year: 2023,
       fuelType: "Hibrit", kmUsed: "21000 km", usagePeriod: "16 ay",
       sentimentType: "COMPLAINT" as const, isChronik: false, thumbsUp: 19,
       title: "Navigasyon sistemi sık sık güncelleme istiyor ve donuyor",
@@ -129,7 +129,7 @@ async function main() {
       tags: ["Navigasyon", "Yazilim", "Infotainment"],
     },
     {
-      userId: ayse.id, category: "SUV" as const, brand: "Hyundai", model: "Tucson", year: 2022,
+      userId: ayse.id, category: "OTOMOBIL" as const, brand: "Hyundai", model: "Tucson", year: 2022,
       fuelType: "Benzin", kmUsed: "28000 km", usagePeriod: "18 ay",
       sentimentType: "TIP" as const, isChronik: false, thumbsUp: 22,
       title: "Klima filtresini 6 ayda bir değiştirin fark büyük",

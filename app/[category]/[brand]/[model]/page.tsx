@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import CategorySidebar from "@/components/CategorySidebar";
 import PostCard, { PostCardPost } from "@/components/PostCard";
 import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI, SENTIMENT_LABEL, carImageUrl } from "@/lib/categories";
+import { kasayiBul } from "@/lib/vehicles";
 
 export default function ModelPage() {
   const { category: catSlug, brand: brandParam, model: modelParam } = useParams<{
@@ -23,6 +24,7 @@ export default function ModelPage() {
   const [sort, setSort] = useState("newest");
   const [sentimentFilter, setSentimentFilter] = useState("");
   const [imgError, setImgError] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   useEffect(() => {
     if (!categoryKey) return;
@@ -47,6 +49,10 @@ export default function ModelPage() {
   }, [categoryKey, brand, model, sort, page, sentimentFilter]);
 
   if (!categoryKey) return null;
+
+  const kasaYil = selectedYear ?? (posts[0] ? posts[0].year : null);
+  const kasaResim = kasaYil ? kasayiBul(brand, model, kasaYil) : undefined;
+  const heroImage = (kasaResim && !imgError) ? kasaResim.resim : carImageUrl(brand, model);
 
   const counts = {
     COMPLAINT: posts.filter((p) => p.sentimentType === "COMPLAINT").length,
@@ -80,19 +86,13 @@ export default function ModelPage() {
             <div className="flex flex-col sm:flex-row">
               {/* Car image */}
               <div className="sm:w-64 h-44 sm:h-auto bg-gray-100 flex-shrink-0 overflow-hidden">
-                {!imgError ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={carImageUrl(brand, model)}
-                    alt={`${brand} ${model}`}
-                    className="w-full h-full object-cover"
-                    onError={() => setImgError(true)}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-6xl">
-                    {CATEGORY_EMOJI[categoryKey]}
-                  </div>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={heroImage}
+                  alt={`${brand} ${model}`}
+                  className="w-full h-full object-cover"
+                  onError={() => setImgError(true)}
+                />
               </div>
 
               {/* Model info */}

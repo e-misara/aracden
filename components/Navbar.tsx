@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 
 const NAV_CATS = [
   { href: "/otomobil", label: "🚗 Otomobil" },
-  { href: "/suv", label: "🚙 Arazi / SUV" },
   { href: "/motosiklet", label: "🏍️ Motosiklet" },
+  { href: "/ticari", label: "🚚 Ticari Araç" },
 ];
 
 export default function Navbar() {
