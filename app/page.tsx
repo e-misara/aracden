@@ -1,210 +1,133 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import PostCard from "@/components/PostCard";
+import PostCard, { PostCardPost } from "@/components/PostCard";
 
-const BRANDS = ["TOGG", "Renault", "Honda", "Volkswagen", "Dacia", "Hyundai", "BMW", "Toyota", "Ford", "Skoda", "Mitsubishi", "Yamaha"];
-const FUEL_TYPES = ["Benzin", "Dizel", "Elektrik", "Hibrit"];
-const SENTIMENT_FILTERS = [
-  { value: "COMPLAINT", label: "Şikayet" },
-  { value: "POSITIVE", label: "Olumlu" },
-  { value: "TIP", label: "İpucu" },
-];
-
-type Post = {
-  id: string;
-  category: string;
-  brand: string;
-  model: string;
-  year: number;
-  fuelType: string;
-  kmUsed: string;
-  sentimentType: string;
-  isChronik: boolean;
-  title: string;
-  body: string;
-  tags: string[];
-  thumbsUp: number;
-  thumbsDown: number;
-  createdAt: string;
-  user: { name: string };
-  _count: { comments: number };
+type Stats = {
+  kronikPosts: { id: string; title: string; brand: string; model: string; thumbsUp: number }[];
+  topPositive: { id: string; title: string; brand: string; model: string; thumbsUp: number }[];
+  totalCount: number;
 };
 
+const CAT_CARDS = [
+  { slug: "otomobil", label: "Otomobil", emoji: "🚗", desc: "Binek araç deneyimleri", bg: "bg-blue-50 border-blue-200" },
+  { slug: "suv", label: "Arazi / SUV", emoji: "🚙", desc: "SUV ve arazi araçları", bg: "bg-green-50 border-green-200" },
+  { slug: "motosiklet", label: "Motosiklet", emoji: "🏍️", desc: "Motosiklet deneyimleri", bg: "bg-orange-50 border-orange-200" },
+];
+
 export default function Home() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<string>("");
-  const [sort, setSort] = useState("newest");
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedFuels, setSelectedFuels] = useState<string[]>([]);
-  const [selectedSentiments, setSelectedSentiments] = useState<string[]>([]);
-
-  const fetchPosts = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ sort, page: String(page) });
-    if (activeCategory) params.set("category", activeCategory);
-    if (selectedBrands.length === 1) params.set("brand", selectedBrands[0]);
-    if (selectedSentiments.length === 1) params.set("sentiment", selectedSentiments[0]);
-
-    const res = await fetch(`/api/posts?${params}`);
-    const data = await res.json();
-    setPosts(data.posts);
-    setTotal(data.total);
-    setLoading(false);
-  }, [sort, page, activeCategory, selectedBrands, selectedSentiments]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [recent, setRecent] = useState<PostCardPost[]>([]);
 
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
-
-  const toggleFilter = (arr: string[], setArr: (v: string[]) => void, val: string) => {
-    setArr(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
-    setPage(1);
-  };
+    fetch("/api/stats").then((r) => r.json()).then(setStats);
+    fetch("/api/posts?sort=newest&limit=5")
+      .then((r) => r.json())
+      .then((d) => setRecent(d.posts));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      {/* Category subnav */}
-      <div className="bg-[#d0021b] border-t border-red-700">
-        <div className="max-w-7xl mx-auto px-4 flex gap-0 items-center">
-          {[
-            { label: "Tümü", value: "" },
-            { label: "🚗 Otomobil", value: "OTOMOBIL" },
-            { label: "🚙 SUV", value: "SUV" },
-            { label: "🏍️ Motosiklet", value: "MOTOSIKLET" },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => { setActiveCategory(tab.value); setPage(1); }}
-              className={`px-5 py-2 text-sm font-bold transition-colors ${
-                activeCategory === tab.value
-                  ? "bg-white text-[#d0021b]"
-                  : "text-white hover:bg-red-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-2 py-1">
-            <select
-              value={sort}
-              onChange={(e) => { setSort(e.target.value); setPage(1); }}
-              className="text-xs bg-red-700 text-white border border-red-500 rounded px-2 py-1"
-            >
-              <option value="newest">En Yeni</option>
-              <option value="top">En Çok Beğeni</option>
-              <option value="comments">En Çok Görüntülenen</option>
-              <option value="kronik">Kronik</option>
-            </select>
-          </div>
+
+      {/* Hero banner */}
+      <div className="bg-[#d0021b] text-white py-6 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl font-extrabold">Araç Deneyim Platformu</h1>
+          <p className="text-red-200 text-sm mt-1">
+            {stats?.totalCount ?? "—"} gerçek kullanıcı deneyimi · Şikayetler · Övgüler · İpuçları
+          </p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-4 flex gap-6">
-        {/* Sidebar */}
-        <aside className="w-60 flex-shrink-0 space-y-4">
-          <div className="bg-white border border-gray-200 rounded p-3">
-            <h3 className="font-bold text-sm text-gray-700 mb-2 border-b pb-1">Marka</h3>
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {BRANDS.map((brand) => (
-                <label key={brand} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedBrands.includes(brand)}
-                    onChange={() => toggleFilter(selectedBrands, setSelectedBrands, brand)}
-                    className="accent-[#d0021b]"
-                  />
-                  {brand}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded p-3">
-            <h3 className="font-bold text-sm text-gray-700 mb-2 border-b pb-1">Yakıt Tipi</h3>
-            <div className="space-y-1">
-              {FUEL_TYPES.map((fuel) => (
-                <label key={fuel} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedFuels.includes(fuel)}
-                    onChange={() => toggleFilter(selectedFuels, setSelectedFuels, fuel)}
-                    className="accent-[#d0021b]"
-                  />
-                  {fuel}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded p-3">
-            <h3 className="font-bold text-sm text-gray-700 mb-2 border-b pb-1">Deneyim Türü</h3>
-            <div className="space-y-1">
-              {SENTIMENT_FILTERS.map((s) => (
-                <label key={s.value} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedSentiments.includes(s.value)}
-                    onChange={() => toggleFilter(selectedSentiments, setSelectedSentiments, s.value)}
-                    className="accent-[#d0021b]"
-                  />
-                  {s.label}
-                </label>
-              ))}
-            </div>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-gray-500">{total} sonuç bulundu</p>
-          </div>
-          {loading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-white border rounded h-28 animate-pulse" />
-              ))}
-            </div>
-          ) : posts.length === 0 ? (
-            <div className="bg-white border rounded p-8 text-center text-gray-500">
-              Henüz paylaşım yok.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          )}
-
-          {total > 10 && (
-            <div className="flex justify-center gap-2 mt-6">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-100"
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
+        {/* Category cards */}
+        <section>
+          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3">Kategoriler</h2>
+          <div className="grid grid-cols-3 gap-4">
+            {CAT_CARDS.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/${cat.slug}`}
+                className={`border rounded-lg p-5 flex items-center gap-4 hover:shadow-md transition-shadow ${cat.bg}`}
               >
-                ← Önceki
-              </button>
-              <span className="px-3 py-1 text-sm text-gray-600">
-                Sayfa {page} / {Math.ceil(total / 10)}
-              </span>
-              <button
-                disabled={page >= Math.ceil(total / 10)}
-                onClick={() => setPage(page + 1)}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-40 hover:bg-gray-100"
-              >
-                Sonraki →
-              </button>
+                <span className="text-4xl">{cat.emoji}</span>
+                <div>
+                  <p className="font-bold text-gray-800">{cat.label}</p>
+                  <p className="text-xs text-gray-500">{cat.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <div className="grid grid-cols-3 gap-6">
+          {/* Recent posts */}
+          <div className="col-span-2 space-y-3">
+            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wide">Son Deneyimler</h2>
+            {recent.length === 0 ? (
+              <div className="space-y-2">
+                {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded animate-pulse" />)}
+              </div>
+            ) : (
+              recent.map((post) => <PostCard key={post.id} post={post} />)
+            )}
+            <Link href="/otomobil" className="block text-center text-sm text-[#d0021b] font-semibold hover:underline mt-2">
+              Tüm deneyimleri gör →
+            </Link>
+          </div>
+
+          {/* Right sidebar */}
+          <div className="space-y-4">
+            {/* Kronik */}
+            <div className="bg-white border border-gray-200 rounded overflow-hidden">
+              <div className="bg-red-600 text-white text-xs font-bold px-3 py-2">
+                🔴 Kronik Sorunlar
+              </div>
+              <div className="divide-y divide-gray-100">
+                {stats?.kronikPosts.map((p) => (
+                  <Link key={p.id} href={`/post/${p.id}`} className="flex items-start gap-2 px-3 py-2 hover:bg-gray-50 group">
+                    <span className="text-red-500 font-bold text-xs mt-0.5">▲</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-700 group-hover:text-[#d0021b] line-clamp-2 leading-snug">
+                        {p.title}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{p.brand} {p.model} · 👍 {p.thumbsUp}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link href="/kronik" className="block text-center text-xs text-[#d0021b] font-semibold py-2 border-t hover:bg-red-50">
+                Tüm kronik sorunlar →
+              </Link>
             </div>
-          )}
-        </main>
+
+            {/* Top positive */}
+            <div className="bg-white border border-gray-200 rounded overflow-hidden">
+              <div className="bg-green-600 text-white text-xs font-bold px-3 py-2">
+                ✅ En Beğenilen Deneyimler
+              </div>
+              <div className="divide-y divide-gray-100">
+                {stats?.topPositive.map((p) => (
+                  <Link key={p.id} href={`/post/${p.id}`} className="flex items-start gap-2 px-3 py-2 hover:bg-gray-50 group">
+                    <span className="text-green-500 font-bold text-xs mt-0.5">▲</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-gray-700 group-hover:text-green-700 line-clamp-2 leading-snug">
+                        {p.title}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">{p.brand} {p.model} · 👍 {p.thumbsUp}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link href="/en-iyiler" className="block text-center text-xs text-green-700 font-semibold py-2 border-t hover:bg-green-50">
+                En iyi deneyimler →
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

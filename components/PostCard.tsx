@@ -1,102 +1,126 @@
 import Link from "next/link";
+import {
+  SENTIMENT_LABEL,
+  SENTIMENT_BORDER,
+  SENTIMENT_COLOR,
+  CATEGORY_EMOJI,
+  categoryToSlug,
+} from "@/lib/categories";
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  OTOMOBIL: "🚗",
-  SUV: "🚙",
-  MOTOSIKLET: "🏍️",
-};
-
-const SENTIMENT_BORDER: Record<string, string> = {
-  COMPLAINT: "border-l-red-500",
-  POSITIVE: "border-l-green-500",
-  TIP: "border-l-orange-400",
-};
-
-const SENTIMENT_LABEL: Record<string, string> = {
-  COMPLAINT: "Şikayet",
-  POSITIVE: "Olumlu",
-  TIP: "İpucu",
-};
-
-interface PostCardProps {
-  post: {
-    id: string;
-    category: string;
-    brand: string;
-    model: string;
-    year: number;
-    fuelType: string;
-    kmUsed: string;
-    sentimentType: string;
-    isChronik: boolean;
-    title: string;
-    body: string;
-    tags: string[];
-    thumbsUp: number;
-    thumbsDown: number;
-    createdAt: string;
-    user: { name: string };
-    _count: { comments: number };
-  };
+export interface PostCardPost {
+  id: string;
+  category: string;
+  brand: string;
+  model: string;
+  year: number;
+  fuelType: string;
+  kmUsed: string;
+  sentimentType: string;
+  isChronik: boolean;
+  title: string;
+  body: string;
+  tags: string[];
+  thumbsUp: number;
+  thumbsDown: number;
+  createdAt: string;
+  user: { name: string };
+  _count: { comments: number };
 }
 
-export default function PostCard({ post }: PostCardProps) {
-  const excerpt = post.body.length > 140 ? post.body.slice(0, 140) + "…" : post.body;
+export default function PostCard({ post }: { post: PostCardPost }) {
+  const excerpt = post.body.length > 160 ? post.body.slice(0, 160) + "…" : post.body;
+  const date = new Date(post.createdAt).toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  const catSlug = categoryToSlug(post.category);
 
   return (
     <Link href={`/post/${post.id}`}>
       <div
-        className={`bg-white border border-gray-200 border-l-4 ${SENTIMENT_BORDER[post.sentimentType]} rounded p-4 hover:shadow-md transition-shadow cursor-pointer`}
+        className={`bg-white border border-gray-200 border-l-4 ${SENTIMENT_BORDER[post.sentimentType]} hover:shadow-md hover:border-gray-300 transition-all cursor-pointer flex`}
       >
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">{CATEGORY_EMOJI[post.category]}</span>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1">
-              <span className="font-bold text-gray-700">
-                {post.brand} {post.model}
-              </span>
-              <span>{post.year}</span>
-              <span>·</span>
-              <span>{post.fuelType}</span>
-              <span>·</span>
-              <span>{post.kmUsed}</span>
+        {/* Main content */}
+        <div className="flex-1 p-3 min-w-0">
+          {/* Breadcrumb + badges */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+            <Link
+              href={`/${catSlug}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-gray-400 hover:text-[#d0021b]"
+            >
+              {CATEGORY_EMOJI[post.category]} {post.category === "OTOMOBIL" ? "Otomobil" : post.category === "SUV" ? "Arazi/SUV" : "Motosiklet"}
+            </Link>
+            <span className="text-gray-300 text-xs">›</span>
+            <Link
+              href={`/${catSlug}/${encodeURIComponent(post.brand)}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-gray-400 hover:text-[#d0021b] font-medium"
+            >
+              {post.brand}
+            </Link>
+            <span className="text-gray-300 text-xs">›</span>
+            <Link
+              href={`/${catSlug}/${encodeURIComponent(post.brand)}/${encodeURIComponent(post.model)}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-gray-500 hover:text-[#d0021b] font-semibold"
+            >
+              {post.model}
+            </Link>
+            <span className="text-gray-300 text-xs">·</span>
+            <span className="text-xs text-gray-400">{post.year} · {post.fuelType} · {post.kmUsed}</span>
+
+            <div className="ml-auto flex items-center gap-1">
               {post.isChronik && (
-                <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs font-semibold">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-red-600 text-white">
                   KRONİK
                 </span>
               )}
-              <span
-                className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
-                  post.sentimentType === "COMPLAINT"
-                    ? "bg-red-100 text-red-700"
-                    : post.sentimentType === "POSITIVE"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-orange-100 text-orange-700"
-                }`}
-              >
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded border ${SENTIMENT_COLOR[post.sentimentType]}`}>
                 {SENTIMENT_LABEL[post.sentimentType]}
               </span>
             </div>
-            <h3 className="font-bold text-gray-900 text-sm leading-snug mb-1">
-              {post.title}
-            </h3>
-            <p className="text-gray-600 text-xs line-clamp-2">{excerpt}</p>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {post.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full"
-                >
-                  #{tag}
-                </span>
-              ))}
+          </div>
+
+          {/* Title */}
+          <h3 className="font-bold text-gray-900 text-sm leading-snug mb-1">
+            {post.title}
+          </h3>
+
+          {/* Excerpt */}
+          <p className="text-gray-500 text-xs line-clamp-2 leading-relaxed mb-2">
+            {excerpt}
+          </p>
+
+          {/* Tags */}
+          <div className="flex flex-wrap gap-1">
+            {post.tags.slice(0, 5).map((tag) => (
+              <span
+                key={tag}
+                className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Right panel — sahibinden ilan sahibi style */}
+        <div className="w-28 flex-shrink-0 border-l border-gray-100 p-3 flex flex-col items-center justify-between bg-gray-50">
+          <div className="text-center">
+            <div className="w-9 h-9 rounded-full bg-[#d0021b] text-white flex items-center justify-center text-sm font-bold mx-auto mb-1">
+              {post.user.name.charAt(0).toUpperCase()}
             </div>
-            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-              <span>👍 {post.thumbsUp}</span>
-              <span>👎 {post.thumbsDown}</span>
-              <span>💬 {post._count.comments}</span>
-              <span className="ml-auto">{post.user.name}</span>
-            </div>
+            <p className="text-xs font-semibold text-gray-700 leading-tight text-center break-words">
+              {post.user.name}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">{date}</p>
+          </div>
+          <div className="text-center space-y-0.5 mt-2">
+            <div className="text-xs text-gray-500">👍 {post.thumbsUp} · 👎 {post.thumbsDown}</div>
+            <div className="text-xs text-gray-400">💬 {post._count.comments} yorum</div>
           </div>
         </div>
       </div>

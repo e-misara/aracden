@@ -7,14 +7,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const category = searchParams.get("category") as Category | null;
   const brand = searchParams.get("brand");
+  const model = searchParams.get("model");
   const sentiment = searchParams.get("sentiment") as SentimentType | null;
   const sort = searchParams.get("sort") || "newest";
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = 10;
+  const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
 
   const where: Record<string, unknown> = {};
   if (category) where.category = category;
   if (brand) where.brand = brand;
+  if (model) where.model = model;
   if (sentiment) where.sentimentType = sentiment;
   if (sort === "kronik") where.isChronik = true;
 
