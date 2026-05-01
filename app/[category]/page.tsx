@@ -16,8 +16,8 @@ import type { CategoryTree } from "@/app/api/categories/route";
 interface Selection {
   marka: string;
   model: string;
-  yil: number;
-  kasaKod: string;
+  kasaTip: string;
+  motor?: string;
 }
 
 export default function CategoryPage() {
@@ -76,7 +76,8 @@ export default function CategoryPage() {
           <FilterPanel
             key={catSlug}
             kategoriSlug={catSlug}
-            onSelect={(marka, model, yil, kasaKod) => setSecim({ marka, model, yil, kasaKod })}
+            withUrl
+            onSelect={(marka, model, kasaTip, motor) => setSecim({ marka, model, kasaTip, motor })}
           />
 
           {/* Seçim sonucu */}
@@ -88,8 +89,8 @@ export default function CategoryPage() {
                   <div className="sm:w-64 h-44 flex-shrink-0 bg-gray-100 overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={getVehicleImage(secim.marka, secim.model, secim.kasaKod, catSlug)}
-                      alt={`${secim.marka} ${secim.model} ${secim.kasaKod}`}
+                      src={getVehicleImage(secim.marka, secim.model, secim.kasaTip, catSlug)}
+                      alt={`${secim.marka} ${secim.model} ${secim.kasaTip}`}
                       className="w-full h-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = `/images/ph-${phSlug}.jpg`; }}
                     />
@@ -97,7 +98,7 @@ export default function CategoryPage() {
                   <div className="flex-1 p-4">
                     <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">{CATEGORY_LABEL[categoryKey]}</p>
                     <h1 className="text-xl font-extrabold text-[#333] mt-0.5">{secim.marka} {secim.model}</h1>
-                    <p className="text-sm text-gray-400 mt-0.5">{secim.kasaKod} · {secim.yil} model</p>
+                    <p className="text-sm text-gray-400 mt-0.5">{secim.kasaTip}{secim.motor ? ` · ${secim.motor}` : ""}</p>
                     <div className="mt-3 flex gap-2">
                       <Link
                         href={`/${catSlug}/${encodeURIComponent(secim.marka)}/${encodeURIComponent(secim.model)}`}
@@ -118,8 +119,8 @@ export default function CategoryPage() {
                 kategoriSlug={catSlug}
                 marka={secim.marka}
                 model={secim.model}
-                kasaKod={secim.kasaKod}
-                yil={secim.yil}
+                kasaKod={secim.kasaTip}
+                yil={0}
               />
             </div>
           )}

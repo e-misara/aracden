@@ -1,118 +1,188 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { KATEGORILER } from "@/lib/vehicles-data";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { vehiclesData, type SahibindenMarka } from "@/lib/vehicles-data";
 import { getVehicleImage } from "@/lib/vehicle-images";
 
 interface FilterPanelProps {
   kategoriSlug: string;
-  onSelect: (marka: string, model: string, yil: number, kasaKod: string) => void;
+  onSelect: (marka: string, model: string, kasaTip: string, motor?: string) => void;
+  withUrl?: boolean;
 }
 
-export default function FilterPanel({ kategoriSlug, onSelect }: FilterPanelProps) {
-  const [seciliMarka, setSeciliMarka] = useState("");
-  const [seciliModel, setSeciliModel] = useState("");
-  const [seciliYil, setSeciliYil] = useState("");
+function getMarkalar(slug: string): SahibindenMarka[] {
+  switch (slug) {
+    case "otomobil":        return vehiclesData.otomobil.markalar;
+    case "arazi-suv":       return vehiclesData.araziSuv.markalar;
+    case "motosiklet":      return vehiclesData.motosiklet.markalar;
+    case "minivan-panelvan":return vehiclesData.minivanPanelvan.markalar;
+    default:                return [];
+  }
+}
 
-  const kategori = KATEGORILER.find((k) => k.slug === kategoriSlug);
-  const markalar = kategori?.markalar ?? [];
+export default function FilterPanel({ kategoriSlug, onSelect, withUrl = false }: FilterPanelProps) {
+  const router = useRouter();
 
-  const markaObj = markalar.find((m) => m.ad === seciliMarka);
-  const modeller = markaObj?.modeller ?? [];
+  const [seciliAltKat,  setSeciliAltKat]  = useState("");
+  const [seciliMarka,   setSeciliMarka]   = useState("");
+  const [seciliModel,   setSeciliModel]   = useState("");
+  const [seciliKasaTip, setSeciliKasaTip] = useState("");
+  const [seciliMotor,   setSeciliMotor]   = useState("");
 
-  const modelObj = modeller.find((m) => m.ad === seciliModel);
+  const isTicari = kategoriSlug === "ticari";
+  const ticariAltKats = isTicari ? vehiclesData.ticariAraclar.altKategoriler : [];
+  const ticariAltKatObj = ticariAltKats.find((k) => k.slug === seciliAltKat);
 
-  const yillar = useMemo(() => {
-    if (!modelObj) return [];
-    const set = new Set<number>();
-    modelObj.kasalar.forEach((k) => {
-      for (let y = k.yillar[0]; y <= k.yillar[1]; y++) set.add(y);
-    });
-    return Array.from(set).sort((a, b) => b - a);
-  }, [modelObj]);
+  const markalar = isTicari ? (ticariAltKatObj?.markalar ?? []) : getMarkalar(kategoriSlug);
+  const markaObj   = markalar.find((m) => m.marka === seciliMarka);
+  const modeller   = markaObj?.modeller ?? [];
+  const modelObj   = modeller.find((m) => m.model === seciliModel);
+  const kasaTipleri = modelObj?.kasaTipleri ?? [];
+  const kasaTipObj  = kasaTipleri.find((k) => k.tip === seciliKasaTip);
+  const motorlar    = kasaTipObj?.motorlar ?? [];
 
-  const kasaResim = useMemo(() => {
-    if (!seciliMarka || !seciliModel || !seciliYil || !modelObj) return null;
-    const yil = parseInt(seciliYil);
-    const kasa = modelObj.kasalar.find((k) => yil >= k.yillar[0] && yil <= k.yillar[1]);
-    if (!kasa) return null;
-    return {
-      kasa,
-      url: getVehicleImage(seciliMarka, seciliModel, kasa.kod, kategoriSlug),
-    };
-  }, [seciliMarka, seciliModel, seciliYil, modelObj, kategoriSlug]);
-
-  // Auto-trigger when all three are selected
-  const handleYilChange = (yil: string) => {
-    setSeciliYil(yil);
-    if (!yil || !seciliMarka || !seciliModel || !modelObj) return;
-    const yilNum = parseInt(yil);
-    const kasa = modelObj.kasalar.find((k) => yilNum >= k.yillar[0] && yilNum <= k.yillar[1]);
-    if (kasa) onSelect(seciliMarka, seciliModel, yilNum, kasa.kod);
+  const resetFrom = (level: "altkat" | "marka" | "model" | "kasa") => {
+    if (level === "altkat") { setSeciliMarka(""); setSeciliModel(""); setSeciliKasaTip(""); setSeciliMotor(""); }
+    if (level === "marka")  { setSeciliModel(""); setSeciliKasaTip(""); setSeciliMotor(""); }
+    if (level === "model")  { setSeciliKasaTip(""); setSeciliMotor(""); }
+    if (level === "kasa")   { setSeciliMotor(""); }
   };
 
-  const selectClass = "border border-[#E0E0E0] rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#FF6000] text-[#333]";
+  const handleMarkaChange = (marka: string) => {
+    setSeciliMarka(marka);
+    resetFrom("marka");
+    if (withUrl) router.push(marka ? `/${kategoriSlug}/${encodeURIComponent(marka)}` : `/${kategoriSlug}`);
+  };
+
+  const handleModelChange = (model: string) => {
+    setSeciliModel(model);
+    resetFrom("model");
+    if (withUrl && seciliMarka && model) {
+      router.push(`/${kategoriSlug}/${encodeURIComponent(seciliMarka)}/${encodeURIComponent(model)}`);
+    }
+  };
+
+  const handleKasaTipChange = (tip: string) => {
+    setSeciliKasaTip(tip);
+    resetFrom("kasa");
+    if (!tip) return;
+    const kasa = modelObj?.kasaTipleri.find((k) => k.tip === tip);
+    if (!kasa?.motorlar?.length) {
+      // No motors → trigger immediately
+      onSelect(seciliMarka, seciliModel, tip, undefined);
+    }
+  };
+
+  const handleMotorChange = (motor: string) => {
+    setSeciliMotor(motor);
+    if (motor) onSelect(seciliMarka, seciliModel, seciliKasaTip, motor);
+  };
+
+  const phSlug = kategoriSlug === "arazi-suv" ? "suv" : kategoriSlug === "minivan-panelvan" ? "minivan" : kategoriSlug;
+  const showPreview = !!(seciliMarka && seciliModel && seciliKasaTip);
+  const imageUrl = showPreview
+    ? getVehicleImage(seciliMarka, seciliModel, seciliKasaTip, kategoriSlug)
+    : null;
+
+  const sc = "border border-[#E0E0E0] rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#FF6000] text-[#333]";
+  const disabled = sc + " disabled:bg-gray-50 disabled:text-gray-400";
 
   return (
     <div className="bg-white border border-[#E0E0E0] rounded-lg p-4 space-y-4">
-      {/* Dropdowns */}
       <div className="flex flex-wrap gap-3 items-end">
+
+        {/* Ticari: alt kategori seçimi */}
+        {isTicari && (
+          <div className="flex-1 min-w-[150px]">
+            <label className="block text-xs font-semibold text-[#333] mb-1">Araç Türü</label>
+            <select
+              value={seciliAltKat}
+              onChange={(e) => { setSeciliAltKat(e.target.value); resetFrom("altkat"); }}
+              className={sc + " w-full"}
+            >
+              <option value="">Tür seçin</option>
+              {ticariAltKats.map((k) => (
+                <option key={k.slug} value={k.slug}>
+                  {k.ad} ({k.ilanSayisi.toLocaleString("tr-TR")} ilan)
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Marka */}
         <div className="flex-1 min-w-[140px]">
           <label className="block text-xs font-semibold text-[#333] mb-1">Marka</label>
           <select
             value={seciliMarka}
-            onChange={(e) => { setSeciliMarka(e.target.value); setSeciliModel(""); setSeciliYil(""); }}
-            className={selectClass + " w-full"}
+            onChange={(e) => handleMarkaChange(e.target.value)}
+            disabled={isTicari && !seciliAltKat}
+            className={disabled + " w-full"}
           >
             <option value="">Marka seçin</option>
-            {markalar.map((m) => <option key={m.ad} value={m.ad}>{m.ad}</option>)}
+            {markalar.map((m) => <option key={m.marka} value={m.marka}>{m.marka}</option>)}
           </select>
         </div>
 
+        {/* Model */}
         <div className="flex-1 min-w-[140px]">
           <label className="block text-xs font-semibold text-[#333] mb-1">Model</label>
           <select
             value={seciliModel}
-            onChange={(e) => { setSeciliModel(e.target.value); setSeciliYil(""); }}
+            onChange={(e) => handleModelChange(e.target.value)}
             disabled={!seciliMarka}
-            className={selectClass + " w-full disabled:bg-gray-50 disabled:text-gray-400"}
+            className={disabled + " w-full"}
           >
             <option value="">Model seçin</option>
-            {modeller.map((m) => <option key={m.ad} value={m.ad}>{m.ad}</option>)}
+            {modeller.map((m) => <option key={m.model} value={m.model}>{m.model}</option>)}
           </select>
         </div>
 
-        <div className="flex-1 min-w-[110px]">
-          <label className="block text-xs font-semibold text-[#333] mb-1">Yıl</label>
+        {/* Kasa Tipi */}
+        <div className="flex-1 min-w-[120px]">
+          <label className="block text-xs font-semibold text-[#333] mb-1">Kasa</label>
           <select
-            value={seciliYil}
-            onChange={(e) => handleYilChange(e.target.value)}
+            value={seciliKasaTip}
+            onChange={(e) => handleKasaTipChange(e.target.value)}
             disabled={!seciliModel}
-            className={selectClass + " w-full disabled:bg-gray-50 disabled:text-gray-400"}
+            className={disabled + " w-full"}
           >
-            <option value="">Yıl seçin</option>
-            {yillar.map((y) => <option key={y} value={y}>{y}</option>)}
+            <option value="">Kasa seçin</option>
+            {kasaTipleri.map((k) => <option key={k.tip} value={k.tip}>{k.tip}</option>)}
           </select>
         </div>
+
+        {/* Motor — sadece seçili kasanın motorları varsa göster */}
+        {motorlar.length > 0 && (
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-xs font-semibold text-[#333] mb-1">Motor</label>
+            <select
+              value={seciliMotor}
+              onChange={(e) => handleMotorChange(e.target.value)}
+              className={sc + " w-full"}
+            >
+              <option value="">Motor seçin</option>
+              {motorlar.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
-      {/* Kasa resmi önizleme */}
-      {kasaResim && (
+      {/* Araç önizleme */}
+      {showPreview && imageUrl && (
         <div className="border border-[#E0E0E0] rounded-lg overflow-hidden">
-          <div className="bg-[#F5F5F5] px-3 py-1.5 flex items-center gap-2 border-b border-[#E0E0E0]">
+          <div className="bg-[#F5F5F5] px-3 py-1.5 flex items-center gap-2 border-b border-[#E0E0E0] flex-wrap">
             <span className="text-xs font-semibold text-[#333]">{seciliMarka} {seciliModel}</span>
-            <span className="text-xs text-gray-400">
-              • {kasaResim.kasa.kod} ({kasaResim.kasa.yillar[0]}–{kasaResim.kasa.yillar[1]})
-            </span>
+            <span className="text-xs text-gray-400">• {seciliKasaTip}</span>
+            {seciliMotor && <span className="text-xs text-gray-400">• {seciliMotor}</span>}
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={kasaResim.url}
-            alt={`${seciliMarka} ${seciliModel} ${kasaResim.kasa.kod}`}
+            src={imageUrl}
+            alt={`${seciliMarka} ${seciliModel} ${seciliKasaTip}`}
             className="w-full h-52 object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = `/images/ph-${kategoriSlug === "arazi-suv" ? "suv" : kategoriSlug === "minivan-panelvan" ? "minivan" : kategoriSlug}.jpg`;
-            }}
+            onError={(e) => { (e.target as HTMLImageElement).src = `/images/ph-${phSlug}.jpg`; }}
           />
         </div>
       )}

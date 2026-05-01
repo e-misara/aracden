@@ -10,8 +10,8 @@ import { getVehicleImage } from "@/lib/vehicle-images";
 interface Selection {
   marka: string;
   model: string;
-  yil: number;
-  kasaKod: string;
+  kasaTip: string;
+  motor?: string;
 }
 
 export default function Home() {
@@ -23,8 +23,8 @@ export default function Home() {
     setSecim(null);
   };
 
-  const handleSecim = (marka: string, model: string, yil: number, kasaKod: string) => {
-    setSecim({ marka, model, yil, kasaKod });
+  const handleSecim = (marka: string, model: string, kasaTip: string, motor?: string) => {
+    setSecim({ marka, model, kasaTip, motor });
   };
 
   return (
@@ -69,7 +69,7 @@ export default function Home() {
               <h3 className="text-xs font-bold text-[#333] uppercase tracking-wide mb-3">Nasıl Çalışır?</h3>
               <ol className="space-y-2 text-xs text-gray-500">
                 <li className="flex gap-2"><span className="w-5 h-5 rounded-full bg-[#FF6000] text-white flex items-center justify-center flex-shrink-0 font-bold">1</span>Kategori seç</li>
-                <li className="flex gap-2"><span className="w-5 h-5 rounded-full bg-[#FF6000] text-white flex items-center justify-center flex-shrink-0 font-bold">2</span>Marka → Model → Yıl seç</li>
+                <li className="flex gap-2"><span className="w-5 h-5 rounded-full bg-[#FF6000] text-white flex items-center justify-center flex-shrink-0 font-bold">2</span>Marka → Model → Kasa seç</li>
                 <li className="flex gap-2"><span className="w-5 h-5 rounded-full bg-[#FF6000] text-white flex items-center justify-center flex-shrink-0 font-bold">3</span>Gerçek kullanıcı yorumlarını oku</li>
                 <li className="flex gap-2"><span className="w-5 h-5 rounded-full bg-[#FF6000] text-white flex items-center justify-center flex-shrink-0 font-bold">4</span>Kendi deneyimini paylaş</li>
               </ol>
@@ -98,8 +98,8 @@ export default function Home() {
                     <div className="sm:w-72 h-44 flex-shrink-0 overflow-hidden bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={getVehicleImage(secim.marka, secim.model, secim.kasaKod, aktifKategori)}
-                        alt={`${secim.marka} ${secim.model} ${secim.kasaKod}`}
+                        src={getVehicleImage(secim.marka, secim.model, secim.kasaTip, aktifKategori)}
+                        alt={`${secim.marka} ${secim.model} ${secim.kasaTip}`}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const slug = aktifKategori === "arazi-suv" ? "suv" : aktifKategori === "minivan-panelvan" ? "minivan" : aktifKategori;
@@ -117,7 +117,7 @@ export default function Home() {
                             {secim.marka} {secim.model}
                           </h1>
                           <p className="text-sm text-gray-400 mt-0.5">
-                            {secim.kasaKod} · {secim.yil} model
+                            {secim.kasaTip}{secim.motor ? ` · ${secim.motor}` : ""}
                           </p>
                         </div>
                       </div>
@@ -130,8 +130,8 @@ export default function Home() {
                   kategoriSlug={aktifKategori}
                   marka={secim.marka}
                   model={secim.model}
-                  kasaKod={secim.kasaKod}
-                  yil={secim.yil}
+                  kasaKod={secim.kasaTip}
+                  yil={0}
                 />
               </div>
             )}
