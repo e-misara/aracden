@@ -42,9 +42,13 @@ export default function FilterPanel({ kategoriSlug, onSelect }: FilterPanelProps
     };
   }, [seciliMarka, seciliModel, seciliYil, modelObj, kategoriSlug]);
 
-  const handleAra = () => {
-    if (!seciliMarka || !seciliModel || !seciliYil || !kasaResim) return;
-    onSelect(seciliMarka, seciliModel, parseInt(seciliYil), kasaResim.kasa.kod);
+  // Auto-trigger when all three are selected
+  const handleYilChange = (yil: string) => {
+    setSeciliYil(yil);
+    if (!yil || !seciliMarka || !seciliModel || !modelObj) return;
+    const yilNum = parseInt(yil);
+    const kasa = modelObj.kasalar.find((k) => yilNum >= k.yillar[0] && yilNum <= k.yillar[1]);
+    if (kasa) onSelect(seciliMarka, seciliModel, yilNum, kasa.kod);
   };
 
   const selectClass = "border border-[#E0E0E0] rounded px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#FF6000] text-[#333]";
@@ -82,7 +86,7 @@ export default function FilterPanel({ kategoriSlug, onSelect }: FilterPanelProps
           <label className="block text-xs font-semibold text-[#333] mb-1">Yıl</label>
           <select
             value={seciliYil}
-            onChange={(e) => setSeciliYil(e.target.value)}
+            onChange={(e) => handleYilChange(e.target.value)}
             disabled={!seciliModel}
             className={selectClass + " w-full disabled:bg-gray-50 disabled:text-gray-400"}
           >
@@ -90,14 +94,6 @@ export default function FilterPanel({ kategoriSlug, onSelect }: FilterPanelProps
             {yillar.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
-
-        <button
-          onClick={handleAra}
-          disabled={!seciliMarka || !seciliModel || !seciliYil}
-          className="px-6 py-2 bg-[#FF6000] text-white rounded font-bold text-sm hover:bg-orange-700 disabled:opacity-40 transition-colors"
-        >
-          Ara
-        </button>
       </div>
 
       {/* Kasa resmi önizleme */}

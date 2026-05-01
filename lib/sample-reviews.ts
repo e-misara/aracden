@@ -448,4 +448,22 @@ export const sampleReviews: SampleReview[] = [
     sentimentType: "COMPLAINT",
     tarih: "2024-01-12",
   },
+
+  // Test yorumu — Fiat Egea 2021
+  {
+    id: "rev-026",
+    kategoriSlug: "otomobil",
+    marka: "Fiat",
+    model: "Egea",
+    kasaKod: "356",
+    yil: 2021,
+    kullanici: "Ahmet",
+    puan: 4,
+    baslik: "3 Yılda Başımdan Geçenler",
+    icerik: "2021 Egea aldım, ilk yıl harika geçti. İkinci yılda şanzıman titremesi başladı, servise götürdüm yazılım güncellemesi yaptılar geçti. Yakıt tüketimi şehirde 8-9L civarı, benim için kabul edilebilir. Kabin gürültüsü biraz fazla ama fiyatına göre mantıklı bir araç.",
+    olumlu: ["Fiyat/performans", "Servis ağı", "Bagaj hacmi"],
+    olumsuz: ["Kabin gürültüsü", "Şanzıman titremesi"],
+    sentimentType: "POSITIVE",
+    tarih: "2025-04-20",
+  },
 ];
