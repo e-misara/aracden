@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-
-const NAV_CATS = [
-  { href: "/otomobil", label: "🚗 Otomobil" },
-  { href: "/motosiklet", label: "🏍️ Motosiklet" },
-  { href: "/ticari", label: "🚚 Ticari Araç" },
-];
+import { ALL_CATEGORIES } from "@/lib/categories";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -17,7 +12,7 @@ export default function Navbar() {
   return (
     <header>
       {/* Top bar */}
-      <div className="bg-[#d0021b] text-white shadow-md">
+      <div className="bg-[#FF6000] text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-12">
           <Link href="/" className="text-xl font-extrabold tracking-tight">
             AraçDen
@@ -29,7 +24,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/write"
-                  className="bg-white text-[#d0021b] px-3 py-1 rounded text-xs font-bold hover:bg-red-50"
+                  className="bg-white text-[#FF6000] px-3 py-1 rounded text-xs font-bold hover:bg-orange-50"
                 >
                   + Deneyim Yaz
                 </Link>
@@ -42,7 +37,7 @@ export default function Navbar() {
                 <Link href="/auth/login" className="hover:underline text-xs opacity-90">Giriş</Link>
                 <Link
                   href="/auth/register"
-                  className="bg-white text-[#d0021b] px-3 py-1 rounded text-xs font-bold hover:bg-red-50"
+                  className="bg-white text-[#FF6000] px-3 py-1 rounded text-xs font-bold hover:bg-orange-50"
                 >
                   Kayıt Ol
                 </Link>
@@ -53,21 +48,21 @@ export default function Navbar() {
       </div>
 
       {/* Category subnav */}
-      <div className="bg-[#b50218] border-b border-red-900">
-        <div className="max-w-7xl mx-auto px-4 flex">
-          {NAV_CATS.map((cat) => {
-            const active = pathname.startsWith(cat.href);
+      <div className="bg-[#E55500] border-b border-orange-900">
+        <div className="max-w-7xl mx-auto px-4 flex overflow-x-auto">
+          {ALL_CATEGORIES.map((cat) => {
+            const active = pathname.startsWith(`/${cat.slug}`);
             return (
               <Link
-                key={cat.href}
-                href={cat.href}
-                className={`px-4 py-2 text-xs font-bold transition-colors ${
+                key={cat.slug}
+                href={`/${cat.slug}`}
+                className={`px-4 py-2 text-xs font-bold whitespace-nowrap transition-colors ${
                   active
-                    ? "bg-white text-[#d0021b]"
-                    : "text-white hover:bg-red-800"
+                    ? "bg-white text-[#FF6000]"
+                    : "text-white hover:bg-orange-700"
                 }`}
               >
-                {cat.label}
+                {cat.emoji} {cat.label}
               </Link>
             );
           })}

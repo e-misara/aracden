@@ -38,7 +38,7 @@ export default function CategorySidebar() {
   const activeBrand = parts[1] ? decodeURIComponent(parts[1]) : "";
   const activeModel = parts[2] ? decodeURIComponent(parts[2]) : "";
 
-  const CAT_ORDER = ["OTOMOBIL", "MOTOSIKLET", "TICARI"];
+  const CAT_ORDER = ["OTOMOBIL", "ARAZI_SUV", "MOTOSIKLET", "MINIVAN", "TICARI"];
   const sortedCats = CAT_ORDER.filter((c) => tree[c]);
 
   return (

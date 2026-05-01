@@ -1,20 +1,34 @@
 export const CATEGORY_SLUG: Record<string, string> = {
   otomobil: "OTOMOBIL",
+  "arazi-suv": "ARAZI_SUV",
   motosiklet: "MOTOSIKLET",
+  "minivan-panelvan": "MINIVAN",
   ticari: "TICARI",
 };
 
 export const CATEGORY_LABEL: Record<string, string> = {
   OTOMOBIL: "Otomobil",
+  ARAZI_SUV: "Arazi & SUV",
   MOTOSIKLET: "Motosiklet",
+  MINIVAN: "Minivan & Panelvan",
   TICARI: "Ticari Araç",
 };
 
 export const CATEGORY_EMOJI: Record<string, string> = {
   OTOMOBIL: "🚗",
+  ARAZI_SUV: "🚙",
   MOTOSIKLET: "🏍️",
+  MINIVAN: "🚐",
   TICARI: "🚚",
 };
+
+export const ALL_CATEGORIES = [
+  { key: "OTOMOBIL", slug: "otomobil", label: "Otomobil", emoji: "🚗" },
+  { key: "ARAZI_SUV", slug: "arazi-suv", label: "Arazi & SUV", emoji: "🚙" },
+  { key: "MOTOSIKLET", slug: "motosiklet", label: "Motosiklet", emoji: "🏍️" },
+  { key: "MINIVAN", slug: "minivan-panelvan", label: "Minivan & Panelvan", emoji: "🚐" },
+  { key: "TICARI", slug: "ticari", label: "Ticari Araç", emoji: "🚚" },
+];
 
 export const SENTIMENT_LABEL: Record<string, string> = {
   COMPLAINT: "Şikayet",
