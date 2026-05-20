@@ -29,10 +29,14 @@ type Review = {
   likeCount?: number;
 };
 
-const SOURCES: { label: string; path: string }[] = [
-  { label: "YouTube batch2 (4 kanal)", path: "/Users/GAC-A/andmcetin-data/new-reviews-batch2.json" },
-  { label: "Şikayetvar (18 marka)",    path: "/Users/GAC-A/andmcetin-data/sikayetvar-reviews.json" },
-];
+const SOURCES: { label: string; path: string }[] = (
+  process.argv.length > 2
+    ? process.argv.slice(2).map((p) => ({ label: p.split("/").pop() || p, path: p }))
+    : [
+        { label: "YouTube batch2 (4 kanal)", path: "/Users/GAC-A/andmcetin-data/new-reviews-batch2.json" },
+        { label: "Şikayetvar (18 marka)",    path: "/Users/GAC-A/andmcetin-data/sikayetvar-reviews.json" },
+      ]
+);
 
 async function main() {
   // Bağlantı testi
