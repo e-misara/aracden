@@ -1,7 +1,7 @@
 # AraçDen Proje Geçmişi
 
-> Son güncelleme: 2026-05-21 (Basın Ajanı Tur 4-6)
-> Toplam DB review sayısı: **11,179**
+> Son güncelleme: 2026-05-21 (Basın Tur 7 — Google News RSS keşfi)
+> Toplam DB review sayısı: **11,632**
 > Repo: https://github.com/e-misara/aracden
 > Production: https://aracden.vercel.app
 
