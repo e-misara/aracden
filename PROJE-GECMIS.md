@@ -1,7 +1,7 @@
 # AraçDen Proje Geçmişi
 
-> Son güncelleme: 2026-05-21 (batch 6 + AraçDen Basın + NHTSA)
-> Toplam DB review sayısı: **7,966**
+> Son güncelleme: 2026-05-21 (batch 7 — 10K aşıldı 🎯)
+> Toplam DB review sayısı: **10,601**
 > Repo: https://github.com/e-misara/aracden
 > Production: https://aracden.vercel.app
 
@@ -157,7 +157,22 @@ Commit: `d2ba84d`
 - **andmcetin enrichment**: 23 stale review bulundu, 7'si testdrives_full.json ile eşleşip güncellendi
 
 **Basın/NHTSA: +706 → DB: 7,966**
-Commit: (bu commit)
+Commit: `4e21152`
+
+#### Batch 7 — Otopark recover + DH Forum (10K aşıldı 🎯)
+- **Otopark kurtarma**: 680 makale tüm vehicles-data markalarıyla yeniden işlendi → 397 yeni (251 dup)
+- **DonanımHaber Forum 4 + 6 section** thread başlık + p1-3 toplama: 51 thread (filtre yok)
+  - thread × ortalama 8-20 post = 420 + 95 yeni review (sentiment regex'le COMPLAINT/POSITIVE/TIP atandı)
+- **DH Marka section'ları** (`/renault--f339`, `/peugeot--f346`, `/hyundai--f347`, `/mercedes--f439`, `/tesla--f2613`, `/mikro-elektrikli-otomobiller--f2773`, `/otomobil-yardim-motor-mekanik-multimedya--f428`, `/trafik-ve-biz--f662`): 115 thread → **673 review**
+- **AraçDen Basın markasız 26 haber** "Genel" marka ile eklendi
+
+**Batch 7: +2,635 → DB: 10,601 ✓ HEDEF AŞILDI**
+
+### Görev B/C/D/E ek not
+- **YouTube Search API**: günlük 10K quota tükendi (önceki batch'lerden) — yarın açılacak
+- **Ekşi Sözlük**: tamamen CloudFlare bot protection arkasında, statik scraping mümkün değil
+- **Arabam.com**: `/marka/model` URL yapısı yanlış (spec'ten), gerçekte `/galeri/` benzeri
+- **DonanımHaber kurtarıldı**: `--compressed` flag eksikti, brotli encoding sorunu çözüldü
 
 ### Bilinen ağ engelleri (Türkiye'den erişim)
 
