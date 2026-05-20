@@ -1,75 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// GET /api/reviews?marka=BMW&model=3 Serisi&kasaTip=Sedan&limit=10&page=1
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const category = searchParams.get("category");
-  const brand = searchParams.get("brand");
-  const model = searchParams.get("model");
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
+  const sp = new URL(req.url).searchParams;
+  const marka = sp.get("marka") || sp.get("brand");
+  const model = sp.get("model");
+  const kategoriSlug = sp.get("kategori") || sp.get("category");
+  const kasaTip = sp.get("kasaTip");
+  const kullanici = sp.get("kullanici");
+  const page = Math.max(1, parseInt(sp.get("page") || "1"));
+  const limit = Math.min(50, Math.max(1, parseInt(sp.get("limit") || "10")));
 
-  const where: Record<string, unknown> = {};
-  if (category) where.category = category;
-  if (brand) where.brand = brand;
+  const where: {
+    marka?: string;
+    model?: string;
+    kategoriSlug?: string;
+    kasaTip?: string;
+    kullanici?: string;
+  } = {};
+  if (marka) where.marka = marka;
   if (model) where.model = model;
+  if (kategoriSlug) where.kategoriSlug = kategoriSlug;
+  if (kasaTip) where.kasaTip = kasaTip;
+  if (kullanici) where.kullanici = kullanici;
 
-  const [posts, total] = await Promise.all([
-    prisma.post.findMany({
+  const [reviews, total] = await Promise.all([
+    prisma.review.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ izlenme: "desc" }, { tarih: "desc" }],
       skip: (page - 1) * limit,
       take: limit,
-      select: {
-        id: true,
-        category: true,
-        brand: true,
-        model: true,
-        year: true,
-        fuelType: true,
-        kmUsed: true,
-        sentimentType: true,
-        isChronik: true,
-        title: true,
-        body: true,
-        tags: true,
-        thumbsUp: true,
-        thumbsDown: true,
-        createdAt: true,
-        user: { select: { name: true, image: true } },
-        _count: { select: { comments: true } },
-      },
     }),
-    prisma.post.count({ where }),
+    prisma.review.count({ where }),
   ]);
 
-  return NextResponse.json({ posts, total, page, limit });
-}
-
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const { userId, category, brand, model, year, fuelType, kmUsed, usagePeriod, sentimentType, title, body: postBody, tags } = body;
-
-  if (!userId || !category || !brand || !model || !year || !title || !postBody) {
-    return NextResponse.json({ error: "Eksik alan" }, { status: 400 });
-  }
-
-  const post = await prisma.post.create({
-    data: {
-      userId,
-      category,
-      brand,
-      model,
-      year: parseInt(year),
-      fuelType: fuelType || "Benzin",
-      kmUsed: kmUsed || "",
-      usagePeriod: usagePeriod || "",
-      sentimentType,
-      title,
-      body: postBody,
-      tags: tags || [],
-    },
+  return NextResponse.json({
+    reviews,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
   });
-
-  return NextResponse.json(post);
 }

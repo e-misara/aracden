@@ -77,3 +77,32 @@ model Vote {
 
   @@unique([postId, userId])
 }
+
+model Review {
+  id              String   @id
+  kategoriSlug    String
+  kullanici       String
+  kullaniciAvatar String?
+  verified        Boolean  @default(false)
+  marka           String
+  model           String
+  kasaKod         String?
+  kasaTip         String?
+  yil             Int?
+  puan            Float
+  sinifKodu       String?
+  baslik          String
+  icerik          String   @db.Text
+  olumlu          String[]
+  olumsuz         String[]
+  sentimentType   String?
+  kaynakUrl       String?
+  tarih           String?
+  izlenme         Int?
+  likeCount       Int?
+  createdAt       DateTime @default(now())
+
+  @@index([marka, model])
+  @@index([kategoriSlug])
+  @@index([izlenme(sort: Desc)])
+}

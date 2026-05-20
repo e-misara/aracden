@@ -10,7 +10,6 @@ import FilterPanel from "@/components/FilterPanel";
 import ReviewSection from "@/components/ReviewSection";
 import { getVehicleImage } from "@/lib/vehicle-images";
 import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from "@/lib/categories";
-import { sampleReviews } from "@/lib/sample-reviews";
 import type { CategoryTree } from "@/app/api/categories/route";
 
 interface Selection {
@@ -43,9 +42,6 @@ export default function CategoryPage() {
       .then((r) => r.json())
       .then((d) => { setPosts(d.posts ?? []); setTotal(d.total ?? 0); setLoading(false); });
   }, [categoryKey, sort, page]);
-
-  // Sample reviews filtered by category slug
-  const categoryReviews = sampleReviews.filter((r) => r.kategoriSlug === catSlug);
 
   if (!categoryKey) return (
     <div className="min-h-screen bg-[#F5F5F5]">
@@ -151,7 +147,7 @@ export default function CategoryPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                  Tüm Deneyimler ({total + categoryReviews.length})
+                  Tüm Deneyimler ({total})
                 </h2>
                 <select
                   value={sort}
@@ -163,40 +159,10 @@ export default function CategoryPage() {
                 </select>
               </div>
 
-              {/* Sample reviews */}
-              {categoryReviews.length > 0 && (
-                <div className="space-y-2 mb-4">
-                  {categoryReviews.map((r) => (
-                    <div key={r.id} className="bg-white border border-[#E0E0E0] rounded-lg p-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-[#FF6000] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                            {r.kullanici[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-[#333]">{r.marka} {r.model} · {r.kullanici}</p>
-                            <p className="text-xs text-gray-400">{r.tarih}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {[1,2,3,4,5].map((i) => (
-                            <svg key={i} className={`w-3 h-3 ${i <= r.puan ? "text-[#FF6000]" : "text-gray-300"}`} fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
-                      </div>
-                      <h4 className="text-sm font-bold text-[#333] mb-1">{r.baslik}</h4>
-                      <p className="text-xs text-gray-600 leading-relaxed">{r.icerik}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {/* DB posts */}
               {loading ? (
                 <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded animate-pulse" />)}</div>
-              ) : posts.length === 0 && categoryReviews.length === 0 ? (
+              ) : posts.length === 0 ? (
                 <div className="bg-white border border-[#E0E0E0] rounded p-8 text-center text-gray-400 text-sm">
                   Bu kategoride henüz deneyim paylaşılmamış.
                 </div>

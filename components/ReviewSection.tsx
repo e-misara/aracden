@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { sampleReviews, type SampleReview } from "@/lib/sample-reviews";
+import type { SampleReview } from "@/lib/sample-reviews";
 import { SENTIMENT_COLOR, SENTIMENT_LABEL } from "@/lib/categories";
 import ExperienceForm from "./ExperienceForm";
 
@@ -12,6 +12,8 @@ interface ReviewSectionProps {
   kasaKod: string;
   yil: number;
 }
+
+const PAGE_SIZE = 10;
 
 function StarRating({ puan }: { puan: number }) {
   return (
@@ -26,23 +28,36 @@ function StarRating({ puan }: { puan: number }) {
 }
 
 export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil }: ReviewSectionProps) {
-  const [dbReviews, setDbReviews] = useState<SampleReview[]>([]);
+  const [reviews, setReviews] = useState<SampleReview[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/reviews?category=${encodeURIComponent(kategoriSlug)}&brand=${encodeURIComponent(marka)}&model=${encodeURIComponent(model)}`)
+    const params = new URLSearchParams({
+      marka,
+      model,
+      kategori: kategoriSlug,
+      limit: String(PAGE_SIZE),
+      page: String(page),
+    });
+    // İlk yüklemede kasaTip filtresi uygulamıyoruz; daha geniş kalsın.
+    fetch(`/api/reviews?${params}`)
       .then((r) => r.json())
-      .catch(() => ({ posts: [] }))
+      .then((d) => {
+        setReviews(d.reviews ?? []);
+        setTotal(d.total ?? 0);
+      })
+      .catch(() => {
+        setReviews([]);
+        setTotal(0);
+      })
       .finally(() => setLoading(false));
-  }, [kategoriSlug, marka, model]);
+  }, [kategoriSlug, marka, model, page]);
 
-  // Merge sample reviews (filtered) with DB reviews
-  const localReviews = sampleReviews.filter(
-    (r) => r.marka === marka && r.model === model && r.kasaKod === kasaKod
-  );
-  const allReviews = [...localReviews, ...dbReviews];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="mt-6 space-y-4">
@@ -50,8 +65,8 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold text-[#333]">
           Kullanıcı Deneyimleri
-          {allReviews.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-400">({allReviews.length})</span>
+          {total > 0 && (
+            <span className="ml-2 text-sm font-normal text-gray-400">({total})</span>
           )}
         </h2>
         <button
@@ -81,7 +96,7 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
             <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
           ))}
         </div>
-      ) : allReviews.length === 0 ? (
+      ) : reviews.length === 0 ? (
         <div className="bg-white border border-[#E0E0E0] rounded-lg p-8 text-center">
           <p className="text-gray-400 text-sm mb-3">Bu araç için henüz deneyim paylaşılmamış.</p>
           <button
@@ -92,58 +107,95 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {allReviews.map((r) => (
-            <div key={r.id} className="bg-white border border-[#E0E0E0] rounded-lg p-4">
-              {/* Header row */}
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#FF6000] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {r.kullanici[0].toUpperCase()}
+        <>
+          <div className="space-y-3">
+            {reviews.map((r) => (
+              <div key={r.id} className="bg-white border border-[#E0E0E0] rounded-lg p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-[#FF6000] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                      {r.kullanici[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-[#333]">
+                        {r.kullanici}
+                        {r.verified && <span className="ml-1 text-[#FF6000]">✓</span>}
+                      </p>
+                      <p className="text-xs text-gray-400">{r.tarih}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-[#333]">{r.kullanici}</p>
-                    <p className="text-xs text-gray-400">{r.tarih}</p>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <StarRating puan={r.puan} />
+                    {r.sentimentType && (
+                      <span className={`text-xs px-2 py-0.5 rounded border ${SENTIMENT_COLOR[r.sentimentType]}`}>
+                        {SENTIMENT_LABEL[r.sentimentType]}
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <StarRating puan={r.puan} />
-                  <span className={`text-xs px-2 py-0.5 rounded border ${SENTIMENT_COLOR[r.sentimentType]}`}>
-                    {SENTIMENT_LABEL[r.sentimentType]}
-                  </span>
+
+                <h4 className="text-sm font-bold text-[#333] mb-1">{r.baslik}</h4>
+                <p className="text-xs text-gray-600 leading-relaxed mb-3">{r.icerik}</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {r.olumlu.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-green-600 mb-1">✅ Olumlu</p>
+                      <ul className="space-y-0.5">
+                        {r.olumlu.map((o, i) => (
+                          <li key={i} className="text-xs text-gray-500">• {o}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {r.olumsuz.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold text-red-500 mb-1">❌ Olumsuz</p>
+                      <ul className="space-y-0.5">
+                        {r.olumsuz.map((o, i) => (
+                          <li key={i} className="text-xs text-gray-500">• {o}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Content */}
-              <h4 className="text-sm font-bold text-[#333] mb-1">{r.baslik}</h4>
-              <p className="text-xs text-gray-600 leading-relaxed mb-3">{r.icerik}</p>
-
-              {/* Pros / Cons */}
-              <div className="grid grid-cols-2 gap-3">
-                {r.olumlu.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-green-600 mb-1">✅ Olumlu</p>
-                    <ul className="space-y-0.5">
-                      {r.olumlu.map((o, i) => (
-                        <li key={i} className="text-xs text-gray-500">• {o}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {r.olumsuz.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-red-500 mb-1">❌ Olumsuz</p>
-                    <ul className="space-y-0.5">
-                      {r.olumsuz.map((o, i) => (
-                        <li key={i} className="text-xs text-gray-500">• {o}</li>
-                      ))}
-                    </ul>
-                  </div>
+                {r.kaynakUrl && (
+                  <a
+                    href={r.kaynakUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-block text-xs text-[#FF6000] hover:underline"
+                  >
+                    Kaynak: izle ↗
+                  </a>
                 )}
               </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-4">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="px-3 py-1 border border-[#E0E0E0] rounded text-xs disabled:opacity-40 hover:bg-gray-100"
+              >
+                ← Önceki
+              </button>
+              <span className="text-xs text-gray-500">
+                Sayfa {page} / {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage(page + 1)}
+                className="px-3 py-1 border border-[#E0E0E0] rounded text-xs disabled:opacity-40 hover:bg-gray-100"
+              >
+                Sonraki →
+              </button>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
