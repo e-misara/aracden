@@ -1,7 +1,7 @@
 # AraçDen Proje Geçmişi
 
-> Son güncelleme: 2026-05-21
-> Toplam DB review sayısı: **5,159**
+> Son güncelleme: 2026-05-21 (batch 6 + AraçDen Basın + NHTSA)
+> Toplam DB review sayısı: **7,966**
 > Repo: https://github.com/e-misara/aracden
 > Production: https://aracden.vercel.app
 
@@ -139,6 +139,35 @@ Commit: `0ff756e`
 
 **Batch 5: +608 → DB: 5,159**
 Commit: `196df36`
+
+#### Batch 6 mega — turkish6 + yeni Şikayetvar + otopark full + enrichment
+- turkish6 kanalları (Otomobilir, OtoSeyir, ozgetrafikte, 60 saniyede araba, Elektrikli Otomobil Haber + And Mehmet Çetin) toplam ~1,400
+- Şikayetvar yeni 18 marka
+- otopark.com derin (251 makale)
+- And Mehmet Çetin testdrives enrichment
+
+**Batch 6: +2,101 → DB: 7,260**
+Commit: `d2ba84d`
+
+#### Basın & NHTSA (2026-05-21)
+- **AraçDen Basın** (NTV + Hürriyet + Sabah + RSS feed'leri): 53 review
+  - Türkçe karakter düzeltme + detay sayfa fetch ile zenginleştirme
+- **Şikayetvar yeni 16 marka p1-10** (Cupra 221, BYD 215, Chery 213, DS 153, Alfa Romeo 126, Mitsubishi 69, Lexus 46, Porsche 37, Subaru 26, Jaguar 19, Volvo 8, Mini 4, Suzuki 3, Jeep 2): 1,142 yakalandı, 646 yeni eklendi (~496 dup)
+- **NHTSA Recall API**: 7 Volkswagen recall (Türkiye'den API'ye `192.168.1.1` router engellemesi — sadece ilk batch geçti)
+- **andmcetin enrichment**: 23 stale review bulundu, 7'si testdrives_full.json ile eşleşip güncellendi
+
+**Basın/NHTSA: +706 → DB: 7,966**
+Commit: (bu commit)
+
+### Bilinen ağ engelleri (Türkiye'den erişim)
+
+| Kaynak | Sebep |
+|--------|-------|
+| `miod.org.tr` | Router/ISS `192.168.1.1` yönlendirme |
+| `otomotivhaberleri.net` | Aynı router engellemesi |
+| `api.nhtsa.gov` | Aynı router engellemesi (kısmi — ilk birkaç istek geçti) |
+
+VPN ile çözülebilir.
 
 ---
 
