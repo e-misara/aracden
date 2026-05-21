@@ -1,8 +1,8 @@
 # AraçDen Proje Geçmişi
 
-> Son güncelleme: 2026-05-21 (Basın Tur 12 — 15K aşıldı, cron 155 sorgu)
-> Toplam DB review sayısı: **15,037**
-> Günlük cron: `0 9 * * * /Users/GAC-A/aracdenbasin/scripts/daily-news.py` (**155 sorgu/gün**)
+> Son güncelleme: 2026-05-21 (Basın Tur 13 — teknik özel, cron 195 sorgu)
+> Toplam DB review sayısı: **15,408**
+> Günlük cron: `0 9 * * * /Users/GAC-A/aracdenbasin/scripts/daily-news.py` (**195 sorgu/gün**)
 > Repo: https://github.com/e-misara/aracden
 > Production: https://aracden.vercel.app
 
