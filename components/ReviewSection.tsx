@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { SampleReview } from "@/lib/sample-reviews";
 import { SENTIMENT_COLOR, SENTIMENT_LABEL } from "@/lib/categories";
+import { getSourceMeta } from "@/lib/source-types";
 import ExperienceForm from "./ExperienceForm";
 
 interface ReviewSectionProps {
@@ -109,24 +110,28 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
       ) : (
         <>
           <div className="space-y-3">
-            {reviews.map((r) => (
+            {reviews.map((r) => {
+              const src = getSourceMeta(r.kullanici, r.sentimentType, r.verified);
+              return (
               <div key={r.id} className="bg-white border border-[#E0E0E0] rounded-lg p-4">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-[#FF6000] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {r.kullanici[0].toUpperCase()}
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0"
+                      style={{ backgroundColor: `${src.color}22`, border: `1px solid ${src.color}55` }}
+                    >
+                      {src.emoji}
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-[#333]">
-                        {r.kullanici}
-                        {r.verified && <span className="ml-1 text-[#FF6000]">✓</span>}
+                      <p className="text-xs font-semibold text-[#333]" style={{ color: src.color }}>
+                        {src.label}
                       </p>
                       <p className="text-xs text-gray-400">{r.tarih}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <StarRating puan={r.puan} />
-                    {r.sentimentType && (
+                    {r.sentimentType && SENTIMENT_LABEL[r.sentimentType] && (
                       <span className={`text-xs px-2 py-0.5 rounded border ${SENTIMENT_COLOR[r.sentimentType]}`}>
                         {SENTIMENT_LABEL[r.sentimentType]}
                       </span>
@@ -171,7 +176,8 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
                   </a>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {totalPages > 1 && (

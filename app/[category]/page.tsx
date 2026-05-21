@@ -6,6 +6,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
 import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from "@/lib/categories";
+import { getSourceMeta } from "@/lib/source-types";
 
 type Review = {
   id: string;
@@ -314,20 +315,22 @@ function FilterGroup({ title, count, children }: { title: string; count?: number
 
 function ReviewCard({ review, catSlug }: { review: Review; catSlug: string }) {
   const sentColor = review.puan <= 2.5 ? "text-[#ff2d55]" : review.puan >= 4 ? "text-[#00d68f]" : "text-[#ffd60a]";
-  const initial = (review.kullanici || "?")[0].toUpperCase();
+  const src = getSourceMeta(review.kullanici, review.sentimentType, review.verified);
   return (
     <Link
       href={`/${catSlug}/${encodeURIComponent(review.marka)}/${encodeURIComponent(review.model)}`}
       className="block bg-[#12121a] border border-[#1e1e2e] hover:border-[#ff6b00] rounded-xl p-4 transition-all"
     >
       <div className="flex items-start gap-3">
-        <div className="w-9 h-9 rounded-full bg-[#1a1a26] border border-[#1e1e2e] flex items-center justify-center text-sm font-bold text-[#ff6b00] flex-shrink-0">
-          {initial}
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0"
+          style={{ backgroundColor: `${src.color}22`, border: `1px solid ${src.color}55` }}
+        >
+          {src.emoji}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-xs font-semibold text-white">{review.kullanici}</span>
-            {review.verified && <span className="text-[#ff6b00] text-[10px]">✓</span>}
+            <span className="text-xs font-semibold" style={{ color: src.color }}>{src.label}</span>
             <span className="text-[10px] text-[#4a4a5e]">·</span>
             <span className="text-xs font-semibold text-[#ff6b00]">{review.marka} {review.model}</span>
             {review.yil != null && review.yil > 0 && <span className="text-xs text-[#4a4a5e]">({review.yil})</span>}

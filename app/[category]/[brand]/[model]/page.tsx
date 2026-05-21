@@ -8,9 +8,12 @@ import Ticker from "@/components/Ticker";
 import ReviewSection from "@/components/ReviewSection";
 import AdSlot from "@/components/AdSlot";
 import ShareButton from "@/components/ShareButton";
+import ManufacturerCard from "@/components/ManufacturerCard";
+import AddIssueForm from "@/components/AddIssueForm";
 import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from "@/lib/categories";
 import { getVehicleImage } from "@/lib/vehicle-images";
 import { getPersonality, TIP_RENKLERI } from "@/lib/vehicle-personalities";
+import { getVehicleInfo } from "@/lib/vehicle-info";
 
 type ApiReview = {
   id: string;
@@ -62,9 +65,11 @@ export default function ModelPage() {
   const [avgPuan, setAvgPuan] = useState<number | null>(null);
   const [sikayetSay, setSikayetSay] = useState(0);
   const [imgError, setImgError] = useState(false);
+  const [showIssue, setShowIssue] = useState(false);
 
   const personality = getPersonality(brand, model);
   const tipColors = personality ? TIP_RENKLERI[personality.tip] : null;
+  const vehicleInfo = getVehicleInfo(brand, model);
 
   useEffect(() => {
     if (!categoryKey) return;
@@ -241,7 +246,39 @@ export default function ModelPage() {
           )}
         </div>
 
-        {/* İki kolon: review + sidebar reklam */}
+        {/* KATMAN 1: Üretici iddiası */}
+        {vehicleInfo && <ManufacturerCard info={vehicleInfo} />}
+
+        {/* KATMAN 3: Sorun bildir CTA */}
+        <div className="mb-6">
+          {!showIssue ? (
+            <button
+              onClick={() => setShowIssue(true)}
+              className="w-full bg-[#12121a] border border-dashed border-[#1e1e2e] hover:border-[#ff6b00] rounded-md py-4 text-sm text-[#8b8b9e] hover:text-white transition-colors"
+            >
+              📣 Bu araçta yaşadığın bir sorunu bildir
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <AddIssueForm
+                kategoriSlug={catSlug}
+                marka={brand}
+                model={model}
+                onSubmit={() => {
+                  setTimeout(() => setShowIssue(false), 1500);
+                }}
+              />
+              <button
+                onClick={() => setShowIssue(false)}
+                className="text-xs text-[#4a4a5e] hover:text-[#8b8b9e]"
+              >
+                ← Kapat
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* KATMAN 2: Gerçek kullanıcı deneyimleri */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           <div className="lg:col-span-3">
             <ReviewSection

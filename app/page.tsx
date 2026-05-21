@@ -10,9 +10,10 @@ import WeeklyTrending from "@/components/WeeklyTrending";
 import EnlerHorizontal from "@/components/EnlerHorizontal";
 import ShareButton from "@/components/ShareButton";
 import { ALL_CATEGORIES } from "@/lib/categories";
+import { getSourceMeta } from "@/lib/source-types";
 
 type SearchResult = { marka: string; model: string; kategori: string; totalReview: number; avgPuan: number | null; url: string };
-type RecentReview = { id: string; marka: string; model: string; kullanici: string; puan: number; baslik: string; icerik: string; tarih: string; kategoriSlug: string };
+type RecentReview = { id: string; marka: string; model: string; kullanici: string; puan: number; baslik: string; icerik: string; tarih: string; kategoriSlug: string; sentimentType?: string; verified?: boolean };
 
 export default function Home() {
   const router = useRouter();
@@ -214,7 +215,7 @@ export default function Home() {
                 : recentReviews.map((r) => {
                     const sentColor =
                       r.puan <= 2.5 ? "text-[#ff2d55]" : r.puan >= 4 ? "text-[#00d68f]" : "text-[#ffd60a]";
-                    const initial = (r.kullanici || "?")[0].toUpperCase();
+                    const src = getSourceMeta(r.kullanici, r.sentimentType);
                     const url = `/${r.kategoriSlug}/${encodeURIComponent(r.marka)}/${encodeURIComponent(r.model)}`;
                     return (
                       <Link
@@ -223,12 +224,15 @@ export default function Home() {
                         className="block bg-[#12121a] border border-[#1e1e2e] hover:border-[#ff6b00] rounded-xl p-4 transition-colors"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#1a1a26] border border-[#1e1e2e] flex items-center justify-center text-sm font-bold text-[#ff6b00] flex-shrink-0">
-                            {initial}
+                          <div
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-base flex-shrink-0"
+                            style={{ backgroundColor: `${src.color}22`, border: `1px solid ${src.color}55` }}
+                          >
+                            {src.emoji}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="text-xs font-semibold text-white">@{r.kullanici}</span>
+                              <span className="text-xs font-semibold" style={{ color: src.color }}>{src.label}</span>
                               <span className="text-[10px] text-[#4a4a5e]">·</span>
                               <span className="text-xs font-semibold text-[#ff6b00]">{r.marka} {r.model}</span>
                               <span className={`text-xs font-mono-num ${sentColor} ml-auto`}>★{r.puan.toFixed(1)}</span>

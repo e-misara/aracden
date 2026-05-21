@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
 import { getVehicleImage } from "@/lib/vehicle-images";
 import { getPersonality, TIP_RENKLERI } from "@/lib/vehicle-personalities";
+import { getVehicleInfo, type VehicleInfo } from "@/lib/vehicle-info";
 
 type SearchResult = {
   marka: string;
@@ -250,11 +251,96 @@ function KarsilastirInner() {
           <CarSelector label="B. ARAÇ" query={b} onPick={(m, mo) => setB({ marka: m, model: mo })} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <CarCard stats={statsA} />
           <CarCard stats={statsB} />
         </div>
+
+        <TeknikKarsilastirma a={statsA ? getVehicleInfo(statsA.marka, statsA.model) : null} b={statsB ? getVehicleInfo(statsB.marka, statsB.model) : null} />
       </section>
+    </div>
+  );
+}
+
+function pickHP(info: VehicleInfo | null) {
+  if (!info || info.motor_secenekleri.length === 0) return null;
+  const hps = info.motor_secenekleri
+    .map((m) => parseInt(m.guc.replace(/[^0-9]/g, ""), 10))
+    .filter((n) => !isNaN(n) && n > 0);
+  if (hps.length === 0) return null;
+  return { min: Math.min(...hps), max: Math.max(...hps) };
+}
+
+function TeknikKarsilastirma({ a, b }: { a: VehicleInfo | null; b: VehicleInfo | null }) {
+  if (!a && !b) return null;
+
+  const rows: Array<{ label: string; a: string; b: string }> = [];
+  const hpA = pickHP(a);
+  const hpB = pickHP(b);
+  if (hpA || hpB) {
+    rows.push({
+      label: "Güç (HP)",
+      a: hpA ? `${hpA.min} - ${hpA.max}` : "—",
+      b: hpB ? `${hpB.min} - ${hpB.max}` : "—",
+    });
+  }
+  rows.push({
+    label: "Yakıt seçenekleri",
+    a: a ? [...new Set(a.motor_secenekleri.map((m) => m.yakit))].join(", ") : "—",
+    b: b ? [...new Set(b.motor_secenekleri.map((m) => m.yakit))].join(", ") : "—",
+  });
+  rows.push({
+    label: "Karma yakıt (resmi)",
+    a: a?.resmi_yakit_tuketimi?.karma ?? "—",
+    b: b?.resmi_yakit_tuketimi?.karma ?? "—",
+  });
+  rows.push({
+    label: "0-100",
+    a: a?.resmi_performans?.hizlanma_0_100 ?? "—",
+    b: b?.resmi_performans?.hizlanma_0_100 ?? "—",
+  });
+  rows.push({
+    label: "Max hız",
+    a: a?.resmi_performans?.max_hiz ?? "—",
+    b: b?.resmi_performans?.max_hiz ?? "—",
+  });
+  rows.push({
+    label: "Garanti",
+    a: a?.resmi_garanti ?? "—",
+    b: b?.resmi_garanti ?? "—",
+  });
+  rows.push({
+    label: "TR popülerlik",
+    a: a?.turkiye_populerlik ?? "—",
+    b: b?.turkiye_populerlik ?? "—",
+  });
+
+  return (
+    <div className="bg-[#12121a] border border-[#1e1e2e] rounded-md overflow-hidden">
+      <div className="px-5 py-3 border-b border-[#1e1e2e] flex items-center justify-between">
+        <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-widest">
+          🏭 ÜRETİCİ TEKNİK VERİLERİ
+        </div>
+        <div className="text-[10px] font-mono-num text-[#4a4a5e]">
+          {a && b ? "İKİ ARAÇ" : a ? "SADECE A" : b ? "SADECE B" : "—"}
+        </div>
+      </div>
+      <table className="w-full text-sm">
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={r.label} className={i % 2 === 0 ? "bg-[#0a0a0f]/40" : ""}>
+              <td className="px-4 py-3 text-[#8b8b9e] text-xs font-mono-num uppercase tracking-wide w-1/3">{r.label}</td>
+              <td className="px-4 py-3 text-white font-mono-num">{r.a}</td>
+              <td className="px-4 py-3 text-white font-mono-num">{r.b}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {(!a || !b) && (
+        <div className="px-5 py-3 border-t border-[#1e1e2e] text-[10px] font-mono-num text-[#4a4a5e]">
+          ⚠ Bir veya iki araç için üretici teknik verisi henüz tabanda yok.
+        </div>
+      )}
     </div>
   );
 }
