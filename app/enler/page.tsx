@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
+import AdSlot from "@/components/AdSlot";
+import ShareButton from "@/components/ShareButton";
 
 type Brand = {
   marka: string;
@@ -176,10 +178,35 @@ export default function EnlerPage() {
             Tüm marka istatistikleri: review sayısı, puanı, şikayet oranı. Sıralama 12.485 review üzerinden hesaplanır, canlı güncellenir.
           </p>
         </div>
+        {/* Sponsor (üst banner) */}
+        <div className="mb-6">
+          <AdSlot slot="enler-sponsor-728" size="728x90" label="LİSTE SPONSORU" />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {LISTS.map((c) => (
-            <BrandList key={c.key} config={c} />
+          {LISTS.map((c, i) => (
+            <div key={c.key}>
+              <BrandList config={c} />
+              {/* Her 3. listeden sonra mini reklam */}
+              {(i + 1) % 3 === 0 && (
+                <div className="mt-2 lg:hidden">
+                  <AdSlot slot={`enler-mid-${i}`} size="300x250" />
+                </div>
+              )}
+            </div>
           ))}
+        </div>
+
+        {/* Alt paylaş */}
+        <div className="mt-8 pt-6 border-t border-[#1e1e2e] flex items-center justify-between flex-wrap gap-3">
+          <div className="text-sm text-[#8b8b9e]">
+            🔥 Bu listeleri arkadaşlarınla paylaş:
+          </div>
+          <ShareButton
+            text="AraçDen Enler — Türkiye'nin araç liderler tablosu"
+            url="/enler"
+            twitterText="AraçDen Enler — gerçek kullanıcı verileriyle marka liderler tablosu 🏆 #AraçDen"
+          />
         </div>
       </section>
     </div>

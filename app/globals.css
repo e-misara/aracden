@@ -70,6 +70,37 @@ body {
   }
 }
 
+/* Apple-style scroll-driven reveal (modern browsers) */
+@keyframes carReveal {
+  from { opacity: 0; transform: translateY(60px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes parallaxFloat {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-80px); }
+}
+@supports (animation-timeline: view()) {
+  .scroll-reveal {
+    animation: carReveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 30%;
+  }
+  .scroll-parallax {
+    animation: parallaxFloat linear both;
+    animation-timeline: scroll();
+    animation-range: 0 1000px;
+  }
+}
+/* Fallback: hep görünür (transform yok) — sadece eski tarayıcılar için */
+@supports not (animation-timeline: view()) {
+  .scroll-reveal,
+  .scroll-parallax { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal,
+  .scroll-parallax { animation: none; opacity: 1; transform: none; }
+}
+
 /* Utility */
 .line-clamp-2 {
   display: -webkit-box;

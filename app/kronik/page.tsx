@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
+import AdAlternative from "@/components/AdAlternative";
+import ShareButton from "@/components/ShareButton";
 
 type Brand = {
   marka: string;
@@ -233,6 +235,29 @@ export default function KronikPage() {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {/* ALTERNATİF ÖNERİ (sponsorlu) */}
+                  {selectedBrand && (
+                    <div className="mt-6">
+                      <AdAlternative
+                        marka={selectedBrand}
+                        problem={problems[0]?.[0]}
+                        kategori={selectedBrandData?.kategori ?? "otomobil"}
+                      />
+                    </div>
+                  )}
+
+                  {/* Paylaş butonu */}
+                  {selectedBrand && (
+                    <div className="mt-4 pt-4 border-t border-[#1e1e2e] flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs text-[#8b8b9e]">Bu raporu arkadaşına gönder:</span>
+                      <ShareButton
+                        text={`${selectedBrand} markasının kronik sorunları — AraçDen raporu`}
+                        url="/kronik"
+                        twitterText={`${selectedBrand} kronik sorunları gündemde 🚨 #AraçDen #${selectedBrand.replace(/[- ]/g, "")}`}
+                      />
                     </div>
                   )}
 

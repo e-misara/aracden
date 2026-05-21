@@ -6,6 +6,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Ticker from "@/components/Ticker";
 import ReviewSection from "@/components/ReviewSection";
+import AdSlot from "@/components/AdSlot";
+import ShareButton from "@/components/ShareButton";
 import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from "@/lib/categories";
 import { getVehicleImage } from "@/lib/vehicle-images";
 import { getPersonality, TIP_RENKLERI } from "@/lib/vehicle-personalities";
@@ -116,10 +118,10 @@ export default function ModelPage() {
           <span className="text-white font-semibold">{model}</span>
         </nav>
 
-        {/* Hero: 3D car card + meta */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        {/* Hero: 3D car card + meta — scroll reveal */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 scroll-reveal">
           {/* 3D Image card */}
-          <div className="lg:col-span-5 card-3d">
+          <div className="lg:col-span-5 card-3d scroll-parallax">
             <div className="bg-[#12121a] border border-[#1e1e2e] rounded-md overflow-hidden">
               <div className="aspect-video bg-[#0a0a0f] overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -239,14 +241,37 @@ export default function ModelPage() {
           )}
         </div>
 
-        {/* Reviews (existing component) */}
-        <ReviewSection
-          kategoriSlug={catSlug}
-          marka={brand}
-          model={model}
-          kasaKod="Sedan"
-          yil={0}
-        />
+        {/* İki kolon: review + sidebar reklam */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3">
+            <ReviewSection
+              kategoriSlug={catSlug}
+              marka={brand}
+              model={model}
+              kasaKod="Sedan"
+              yil={0}
+            />
+
+            {/* Paylaş bandı */}
+            <div className="mt-8 pt-6 border-t border-[#1e1e2e] flex items-center justify-between flex-wrap gap-3">
+              <div className="text-sm text-[#8b8b9e]">
+                Bu arabayı arkadaşına sor:
+              </div>
+              <ShareButton
+                text={`${brand} ${model} hakkında ${total} kişinin yorumunu gördüm — almadan önce bak!`}
+                url={`/${catSlug}/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`}
+                twitterText={`${brand} ${model} ★${(avgPuan ?? 0).toFixed(1)} (${total} review) #AraçDen #${brand.replace(/[- ]/g, "")}`}
+              />
+            </div>
+          </div>
+
+          {/* Sağ sidebar reklam */}
+          <aside className="hidden lg:block lg:col-span-1">
+            <div className="sticky top-32 space-y-4">
+              <AdSlot slot={`model-sidebar-${brand}`} size="300x600" label="YETKİLİ BAYİ" />
+            </div>
+          </aside>
+        </div>
       </section>
     </div>
   );
