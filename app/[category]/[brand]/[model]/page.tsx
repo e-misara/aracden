@@ -61,9 +61,10 @@ export default function ModelPage() {
   const categoryKey = slugToCategory(catSlug);
 
   const [reviews, setReviews] = useState<ApiReview[]>([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number | null>(null);
   const [avgPuan, setAvgPuan] = useState<number | null>(null);
   const [sikayetSay, setSikayetSay] = useState(0);
+  const [statsLoaded, setStatsLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [showIssue, setShowIssue] = useState(false);
   const [kasaStats, setKasaStats] = useState<Array<{
@@ -95,7 +96,8 @@ export default function ModelPage() {
           setAvgPuan(avg);
           setSikayetSay(arr.filter((r) => r.puan <= 2.5).length);
         }
-      });
+      })
+      .finally(() => setStatsLoaded(true));
   }, [categoryKey, brand, model]);
 
   if (!categoryKey) {
@@ -112,7 +114,8 @@ export default function ModelPage() {
   const heroImage = !imgError ? getVehicleImage(brand, model, "Sedan", catSlug) : `/images/ph-otomobil.jpg`;
   const problems = categorizeProblems(reviews);
   const maxCount = problems[0]?.[1].count ?? 1;
-  const sikayetOrani = total > 0 ? (sikayetSay / Math.min(total, reviews.length)) * 100 : 0;
+  const totalSafe = total ?? 0;
+  const sikayetOrani = totalSafe > 0 ? (sikayetSay / Math.min(totalSafe, reviews.length)) * 100 : 0;
 
   return (
     <div className="min-h-screen">
@@ -158,7 +161,7 @@ export default function ModelPage() {
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{model}</h1>
               <div className="text-sm text-[#8b8b9e] mt-2 font-mono-num">
-                {total.toLocaleString("tr-TR")} review · {reviews.length} analiz edilen
+                {total == null ? "yükleniyor…" : `${total.toLocaleString("tr-TR")} review · ${reviews.length} analiz edilen`}
               </div>
             </div>
 
@@ -193,7 +196,7 @@ export default function ModelPage() {
               SKOR KARTI · {brand.toUpperCase()} {model.toUpperCase()}
             </div>
             <span className="text-[10px] font-mono-num text-[#4a4a5e]">
-              {total.toLocaleString("tr-TR")} REVIEW
+              {total == null ? "…" : `${total.toLocaleString("tr-TR")} REVIEW`}
             </span>
           </div>
 
@@ -201,7 +204,7 @@ export default function ModelPage() {
             <div>
               <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-wide mb-1">PUAN</div>
               <div className="text-3xl font-mono-num font-semibold text-[#ffd60a]">
-                ★ {(avgPuan ?? 0).toFixed(1)}
+                {statsLoaded && avgPuan != null ? `★ ${avgPuan.toFixed(1)}` : "—"}
               </div>
             </div>
             <div>
@@ -211,17 +214,17 @@ export default function ModelPage() {
                   sikayetOrani > 50 ? "text-[#ff2d55]" : sikayetOrani > 30 ? "text-[#ffd60a]" : "text-[#00d68f]"
                 }`}
               >
-                %{sikayetOrani.toFixed(0)}
+                {statsLoaded ? `%${sikayetOrani.toFixed(0)}` : "—"}
               </div>
             </div>
             <div>
               <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-wide mb-1">NEGATİF</div>
-              <div className="text-3xl font-mono-num font-semibold text-[#ff2d55]">{sikayetSay}</div>
+              <div className="text-3xl font-mono-num font-semibold text-[#ff2d55]">{statsLoaded ? sikayetSay : "—"}</div>
             </div>
             <div>
               <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-wide mb-1">POZİTİF</div>
               <div className="text-3xl font-mono-num font-semibold text-[#00d68f]">
-                {reviews.filter((r) => r.puan >= 4).length}
+                {statsLoaded ? reviews.filter((r) => r.puan >= 4).length : "—"}
               </div>
             </div>
           </div>

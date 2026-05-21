@@ -22,8 +22,9 @@ export default function KasaPage() {
   const [resolvedKasa, setResolvedKasa] = useState<string | null>(null);
   const [resolvedKod, setResolvedKod] = useState<string | null>(null);
   const [yillar, setYillar] = useState<YilStat[]>([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number | null>(null);
   const [avgPuan, setAvgPuan] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     fetch(`/api/model-kasa-yillar/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${encodeURIComponent(kasaSlug)}`)
@@ -41,7 +42,8 @@ export default function KasaPage() {
           );
           setAvgPuan(weighted / t);
         }
-      });
+      })
+      .finally(() => setLoaded(true));
   }, [brand, model, kasaSlug]);
 
   if (!categoryKey) {
@@ -90,7 +92,9 @@ export default function KasaPage() {
             <div className="text-base text-[#8b8b9e] mt-1">{tipLabel} kasası</div>
           )}
           <div className="text-sm text-[#8b8b9e] mt-2 font-mono-num">
-            {total.toLocaleString("tr-TR")} review · {yillar.length} yıl
+            {loaded
+              ? `${(total ?? 0).toLocaleString("tr-TR")} review · ${yillar.length} yıl`
+              : "yükleniyor…"}
           </div>
         </div>
 
@@ -100,13 +104,13 @@ export default function KasaPage() {
             <div>
               <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase mb-1">PUAN</div>
               <div className="text-3xl font-mono-num font-semibold text-[#ffd60a]">
-                ★ {(avgPuan ?? 0).toFixed(1)}
+                {loaded && avgPuan != null ? `★ ${avgPuan.toFixed(1)}` : "—"}
               </div>
             </div>
             <div>
               <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase mb-1">REVIEW</div>
               <div className="text-3xl font-mono-num font-semibold text-white">
-                {total.toLocaleString("tr-TR")}
+                {loaded ? (total ?? 0).toLocaleString("tr-TR") : "—"}
               </div>
             </div>
             <div>
