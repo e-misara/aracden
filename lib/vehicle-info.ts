@@ -306,6 +306,106 @@ export const vehicleInfo: Record<string, VehicleInfo> = {
   },
 };
 
-export function getVehicleInfo(marka: string, model: string): VehicleInfo | null {
-  return vehicleInfo[`${marka}_${model}`] ?? null;
+// ─── Template fallback ────────────────────────────────────────────────────────
+// vehicles-data.ts'deki TÜM modeller için elle yazılmadığında otomatik
+// üretilen "placeholder" — basın tarama ve AI ile zenginleştirilene kadar
+// geçici. `isPlaceholder` ile UI bunu açıkça etiketler.
+
+import { KATEGORILER } from "./vehicles-data";
+
+const HP_MAP: Record<string, [number, number]> = {
+  Hatchback: [80, 200],
+  Sedan: [100, 240],
+  SUV: [120, 280],
+  Crossover: [110, 220],
+  Coupe: [180, 400],
+  Cabrio: [150, 350],
+  "Station Wagon": [110, 250],
+  Pickup: [130, 280],
+  MPV: [100, 180],
+  Van: [90, 170],
+  Scooter: [10, 35],
+  Naked: [40, 200],
+  Supersport: [120, 220],
+  Adventure: [60, 180],
+  Roadster: [50, 200],
+};
+
+function inferKategoriSlug(marka: string, model: string): string | null {
+  for (const k of KATEGORILER) {
+    const m = k.markalar.find((b) => b.ad === marka);
+    if (m?.modeller.some((mo) => mo.ad === model)) return k.slug;
+  }
+  return null;
+}
+
+function generateBasicInfo(marka: string, model: string): VehicleInfo | null {
+  // vehicles-data.ts'den modelin kasalarını topla
+  let kasalar: { tip: string; motorlar?: string[] }[] = [];
+  for (const k of KATEGORILER) {
+    const b = k.markalar.find((bb) => bb.ad === marka);
+    const mo = b?.modeller.find((mm) => mm.ad === model);
+    if (mo) {
+      kasalar = mo.kasalar.map((kk) => ({ tip: kk.kod, motorlar: kk.motorlar }));
+      break;
+    }
+  }
+  if (kasalar.length === 0) return null;
+
+  // Motor seçeneklerini parse et — "1.5 TFSI 150 HP" formatı
+  const motorlar: Motor[] = [];
+  for (const k of kasalar) {
+    for (const m of k.motorlar ?? []) {
+      const guc = m.match(/(\d{2,4})\s*HP/i)?.[1];
+      const hacim = m.match(/(\d\.\d)\s*L?/i)?.[1];
+      const kod = m.replace(/\s*\d{2,4}\s*HP.*/i, "").trim();
+      let yakit: Motor["yakit"] = "Benzin";
+      if (/TDI|dCi|HDi|CRDi|EcoBlue|BlueHDi|D[\s-]*\d|HDi|dizel/i.test(m)) yakit = "Dizel";
+      else if (/EV|elektrik|electric/i.test(m)) yakit = "Elektrik";
+      else if (/PHEV|hibrit|hybrid|MHEV|HEV|e:HEV/i.test(m)) yakit = "Hibrit";
+      else if (/LPG|ECO-G/i.test(m)) yakit = "LPG";
+      motorlar.push({
+        kod: kod || m,
+        hacim: hacim ? `${hacim}L` : "—",
+        guc: guc ? `${guc} HP` : "—",
+        yakit,
+      });
+    }
+  }
+
+  // Motor yoksa kasaya göre tahmini HP aralığı
+  if (motorlar.length === 0) {
+    const tip = kasalar[0].tip;
+    const range = HP_MAP[tip];
+    if (range) {
+      motorlar.push({ kod: "Standart", hacim: "—", guc: `${range[0]}-${range[1]} HP`, yakit: "Benzin" });
+    }
+  }
+
+  return {
+    marka,
+    model,
+    yillar: "—",
+    resmi_tanim: `${marka} ${model} — ${kasalar.map((k) => k.tip).join(" / ")} gövde seçenekleri. Detaylı üretici verisi yakında.`,
+    motor_secenekleri: motorlar,
+    guvenlik_ekipmanlari: ["ABS", "ESP", "Hava yastığı"],
+    resmi_garanti: "2 yıl (standart)",
+    bilinen_sorunlar: [],
+    guclu_yonler: [],
+  };
+}
+
+export function getVehicleInfo(
+  marka: string,
+  model: string,
+): (VehicleInfo & { isPlaceholder?: boolean }) | null {
+  const exact = vehicleInfo[`${marka}_${model}`];
+  if (exact) return exact;
+  const gen = generateBasicInfo(marka, model);
+  if (gen) return { ...gen, isPlaceholder: true };
+  return null;
+}
+
+export function getInferredKategoriSlug(marka: string, model: string): string | null {
+  return inferKategoriSlug(marka, model);
 }

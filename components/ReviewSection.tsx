@@ -12,6 +12,9 @@ interface ReviewSectionProps {
   model: string;
   kasaKod: string;
   yil: number;
+  // Yeni: aktif filtreleri review fetch'ine yansıt
+  filterKasaTip?: string;
+  filterYil?: number;
 }
 
 const PAGE_SIZE = 10;
@@ -28,7 +31,7 @@ function StarRating({ puan }: { puan: number }) {
   );
 }
 
-export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil }: ReviewSectionProps) {
+export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil, filterKasaTip, filterYil }: ReviewSectionProps) {
   const [reviews, setReviews] = useState<SampleReview[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -44,7 +47,8 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
       limit: String(PAGE_SIZE),
       page: String(page),
     });
-    // İlk yüklemede kasaTip filtresi uygulamıyoruz; daha geniş kalsın.
+    if (filterKasaTip) params.set("kasaTip", filterKasaTip);
+    if (filterYil && filterYil > 0) params.set("yil", String(filterYil));
     fetch(`/api/reviews?${params}`)
       .then((r) => r.json())
       .then((d) => {
@@ -56,7 +60,7 @@ export default function ReviewSection({ kategoriSlug, marka, model, kasaKod, yil
         setTotal(0);
       })
       .finally(() => setLoading(false));
-  }, [kategoriSlug, marka, model, page]);
+  }, [kategoriSlug, marka, model, page, filterKasaTip, filterYil]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 

@@ -1,6 +1,6 @@
 # AraçDen Proje Geçmişi
 
-> Son güncelleme: 2026-05-21 (Basın Tur 13 — teknik özel, cron 195 sorgu)
+> Son güncelleme: 2026-05-21 (3-katmanlı araç bilgi + 4-seviye URL hiyerarşisi)
 > Toplam DB review sayısı: **15,408**
 > Günlük cron: `0 9 * * * /Users/GAC-A/aracdenbasin/scripts/daily-news.py` (**195 sorgu/gün**)
 > Repo: https://github.com/e-misara/aracden
@@ -25,22 +25,28 @@
 - **Comment, Vote** (post etkileşimleri)
 - **Review** (5,159 kayıt — scraping/import ile beslenir, **bu projenin ana veri kaynağı**)
 
-### Mevcut Sayfalar/Route'lar
-- `/` — Anasayfa, 5 kategori sekmesi + FilterPanel
-- `/[category]` — Kategori sayfası, marka grid + FilterPanel
-- `/[category]/[brand]` — Marka sayfası
-- `/[category]/[brand]/[model]` — Model detay
-- `/post/[id]` — Post detay
-- `/write` — Yeni deneyim formu (4 adım)
-- `/auth/login`, `/auth/register`
-- `/en-iyiler`, `/kronik`
+### Mevcut Sayfalar/Route'lar (4 seviye hiyerarşi)
+- `/` — Anasayfa, ticker + arama + Bu Hafta + EnlerHorizontal
+- `/[category]` — Kategori sayfası (Bloomberg dark, sort + brand filter)
+- `/[category]/[brand]` — Marka detay (model grid + Bloomberg score card)
+- `/[category]/[brand]/[model]` — Model detay (KATMAN 1 ManufacturerCard + KATMAN 2 Reviews + KATMAN 3 AddIssueForm)
+- `/[category]/[brand]/[model]/[kasa]` — Kasa/gövde tipi (Sedan/SUV/Hatchback) — yıl grid
+- `/[category]/[brand]/[model]/[kasa]/[yil]` — Model yılı detay
+- `/karsilastir?a=BMW-3 Serisi&b=Audi-A4` — İki araç + üretici teknik tablosu
+- `/post/[id]`, `/write`, `/auth/*`, `/en-iyiler`, `/kronik`
 
 ### API Route'ları
-- `GET /api/reviews?marka=X&model=Y&kategori=Z&limit=N&page=P` — **Review DB'den** (5,159 kayıt)
-- `GET /api/posts` — Post tablosu (kullanıcı yorumları)
-- `GET /api/categories` — Kategori ağacı
-- `POST /api/ai-edit` — Claude API ile review düzenleme
-- `GET /api/stats` — Site istatistikleri
+- `GET /api/reviews` — `marka`, `model`, `kategori`, `kasaTip`, `yil`, `limit`, `page` desteği
+- `GET /api/brands?kategori=X&sort=avgPuan|sikayetOrani|totalReview` — Marka istatistikleri
+- `GET /api/brand-models/[marka]?kategori=X` — Marka altındaki model agregatları
+- `GET /api/model-kasalar/[marka]/[model]` — Model bazında kasaTip yorum sayıları
+- `GET /api/model-kasa-yillar/[marka]/[model]/[kasa]` — Kasa altındaki yıllar
+- `GET /api/specs/[marka]/[model]` — Üretici teknik verisi (vehicle-info)
+- `GET /api/real-vs-official/[marka]/[model]` — Üretici iddia vs gerçek kullanıcı
+- `GET /api/search?q=...` — Marka+model autocomplete
+- `GET /api/hashtags` — Hashtag bulutu + filtreli arama
+- `POST /api/issues` — Kullanıcı sorun bildirimi → Review (sentimentType USER_ISSUE)
+- `POST /api/posts`, `POST /api/ai-edit`
 
 ### Kurulu Dosyalar
 | Dosya | Açıklama |
@@ -243,6 +249,38 @@ Yerel arşiv: `/Users/GAC-A/andmcetin-data/output/` (testdrives_full.json, artic
 
 ---
 
+## Mimari — 3 Katman + 4 Seviye URL (yeni)
+
+### 4 Seviye URL Hiyerarşisi
+```
+/[category]                                              # kategori (otomobil, arazi-suv…)
+/[category]/[brand]                                      # marka (BMW)
+/[category]/[brand]/[model]                              # model (3 Serisi)
+/[category]/[brand]/[model]/[kasa]                       # kasa/gövde (Sedan)
+/[category]/[brand]/[model]/[kasa]/[yil]                 # model yılı (2018)
+```
+**Not:** "Kasa" = DB'deki `kasaTip` (Sedan/SUV/Hatchback/Coupe…) — BMW E46 gibi şasi kodları DB'de yok, eklendiğinde slug "e46" olur. Şu an 27 distinct kasaTip değeri var.
+
+### 3 Katman Sistemi (her model sayfasında)
+1. **KATMAN 1 — Üretici İddiası:** `ManufacturerCard` → `getVehicleInfo()` ile resmi motor/yakıt/garanti/bilinen sorunlar. 15 popüler model elle yazılı, geri kalan ~600+ model `generateBasicInfo()` ile **placeholder** etiketli template.
+2. **KATMAN 2 — Gerçek Veri:** `ReviewSection` → DB'den (15,408 review). Kullanıcı adları gizli, `getSourceMeta()` kategori etiketi (✅ Sahibi / 🎬 Video / 😤 Şikayet / 📰 Basın / 📢 Recall).
+3. **KATMAN 3 — Sorun Bildir:** `AddIssueForm` → `POST /api/issues` → Review (sentimentType=`USER_ISSUE`, verified=false).
+
+### Reklam Slot Envanteri
+| Slot | Boyut | Konum |
+|------|-------|-------|
+| `model-sidebar-{brand}` | 300x600 | Model sayfası sidebar |
+| `kasa-{brand}-{model}-{kasa}` | 300x600 | Kasa sayfası sidebar |
+| `yil-{brand}-{model}-{yil}` | 300x600 | Yıl sayfası sidebar |
+| `brand-{brand}-banner` | 728x90 | Marka sayfası alt banner |
+
+### Teknik Veri Kaynakları
+- **Üretici:** `lib/vehicle-info.ts` — elle (15) + template (600+) + AI fallback (Anthropic kredi gerek)
+- **Gerçek kullanıcı:** PostgreSQL `Review` tablosu (15,408 kayıt)
+- **Kasa katalogu:** `lib/vehicles-data.ts` (Sahibinden formatı)
+
+---
+
 ## Yarın Yapılacaklar
 
 ### Yüksek Öncelik
@@ -251,7 +289,8 @@ Yerel arşiv: `/Users/GAC-A/andmcetin-data/output/` (testdrives_full.json, artic
   printf "%s" "$NEON_URL" | npx vercel env add DATABASE_URL preview
   ```
 - [ ] **Neon parolasını rotate et** (chat'te paylaşıldı, güvenlik): https://console.neon.tech → Roles → Reset password → `.env` + Vercel env güncelle
-- [ ] **ReviewSection kasaTip filtre opsiyonu** — şu an `kategoriSlug + marka + model` ile filtreliyor, kasaTip parametresi de eklenebilir (daha dar filtre için)
+- [ ] **`/api/ai-info` Claude fallback** — Anthropic kredisi yüklenince placeholder'lar AI ile zenginleştirilecek
+- [ ] **vehicle-info elle genişletme** — sadece 15 model elle, kalan ~600 model placeholder (basın taraması teknik veri toplayınca elle dolacak)
 
 ### Veri Genişleme
 - [ ] **arabam.com derin scraping (Playwright/Selenium)** — sitemap'ten daha fazla makale çıkarmak için CloudFlare bot challenge'ı bypass etmek gerek

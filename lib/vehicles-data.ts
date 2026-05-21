@@ -1144,6 +1144,16 @@ function buildMarkalar(markalar: SahibindenMarka[]): Marka[] {
   }));
 }
 
+export function getModelKasalari(marka: string, model: string): { kod: string; motorlar?: string[] }[] {
+  for (const k of Object.values(vehiclesData)) {
+    const markalar = "markalar" in k ? k.markalar : k.altKategoriler.flatMap((a) => a.markalar);
+    const m = markalar.find((mm) => mm.marka === marka);
+    const mo = m?.modeller.find((mmm) => mmm.model === model);
+    if (mo) return mo.kasaTipleri.map((kk) => ({ kod: kk.tip, motorlar: kk.motorlar }));
+  }
+  return [];
+}
+
 export const KATEGORILER: Kategori[] = [
   {
     slug: "otomobil",

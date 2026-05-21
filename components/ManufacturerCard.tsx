@@ -20,7 +20,7 @@ function yakitTipleri(motorlar: Motor[]) {
   return [...new Set(motorlar.map((m) => m.yakit))];
 }
 
-export default function ManufacturerCard({ info }: { info: VehicleInfo }) {
+export default function ManufacturerCard({ info }: { info: VehicleInfo & { isPlaceholder?: boolean } }) {
   const motorOz = motorOzeti(info.motor_secenekleri);
   const yakitlar = yakitTipleri(info.motor_secenekleri);
   const yt = info.resmi_yakit_tuketimi;
@@ -35,11 +35,15 @@ export default function ManufacturerCard({ info }: { info: VehicleInfo }) {
             {info.marka.toUpperCase()} İDDİASI · ÜRETİCİ VERİSİ
           </div>
         </div>
-        {info.turkiye_populerlik && (
+        {info.isPlaceholder ? (
+          <span className="text-[10px] font-mono-num text-[#ffd60a] uppercase">
+            ⓘ PLACEHOLDER
+          </span>
+        ) : info.turkiye_populerlik ? (
           <span className="text-[10px] font-mono-num text-[#4a4a5e] uppercase">
             TR · {info.turkiye_populerlik}
           </span>
-        )}
+        ) : null}
       </div>
 
       {info.slogan && (

@@ -14,6 +14,7 @@ import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from "@/lib/categories
 import { getVehicleImage } from "@/lib/vehicle-images";
 import { getPersonality, TIP_RENKLERI } from "@/lib/vehicle-personalities";
 import { getVehicleInfo } from "@/lib/vehicle-info";
+import { getModelKasalari } from "@/lib/vehicles-data";
 
 type ApiReview = {
   id: string;
@@ -66,10 +67,18 @@ export default function ModelPage() {
   const [sikayetSay, setSikayetSay] = useState(0);
   const [imgError, setImgError] = useState(false);
   const [showIssue, setShowIssue] = useState(false);
+  const [kasaStats, setKasaStats] = useState<Array<{ kasa: string; total: number; avgPuan: number | null; sikayetOrani: number }>>([]);
 
   const personality = getPersonality(brand, model);
   const tipColors = personality ? TIP_RENKLERI[personality.tip] : null;
   const vehicleInfo = getVehicleInfo(brand, model);
+  const kasalarFromData = getModelKasalari(brand, model);
+
+  useEffect(() => {
+    fetch(`/api/model-kasalar/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`)
+      .then((r) => r.json())
+      .then((d) => setKasaStats(d.kasalar ?? []));
+  }, [brand, model]);
 
   useEffect(() => {
     if (!categoryKey) return;
@@ -248,6 +257,40 @@ export default function ModelPage() {
 
         {/* KATMAN 1: Üretici iddiası */}
         {vehicleInfo && <ManufacturerCard info={vehicleInfo} />}
+
+        {/* Kasa seçimi (gövde tipi) */}
+        {(kasalarFromData.length > 0 || kasaStats.length > 0) && (
+          <div className="mb-6">
+            <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-widest mb-2">
+              KASA / GÖVDE TİPİ
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(kasalarFromData.length > 0
+                ? kasalarFromData.map((k) => k.kod)
+                : kasaStats.map((k) => k.kasa)
+              ).map((kasa) => {
+                const stat = kasaStats.find((s) => s.kasa === kasa);
+                const slug = kasa.toLowerCase().replace(/\s+/g, "-");
+                return (
+                  <Link
+                    key={kasa}
+                    href={`/${catSlug}/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${encodeURIComponent(slug)}`}
+                    className="bg-[#12121a] border border-[#1e1e2e] hover:border-[#ff6b00] rounded-md px-4 py-3 transition-colors min-w-[110px]"
+                  >
+                    <div className="text-sm font-bold text-white">{kasa}</div>
+                    <div className="text-[10px] font-mono-num text-[#8b8b9e] mt-1">
+                      {stat ? (
+                        <>★ {(stat.avgPuan ?? 0).toFixed(1)} · {stat.total} review</>
+                      ) : (
+                        <span className="text-[#4a4a5e]">veri yok</span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* KATMAN 3: Sorun bildir CTA */}
         <div className="mb-6">
