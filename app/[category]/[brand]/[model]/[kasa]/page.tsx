@@ -20,6 +20,7 @@ export default function KasaPage() {
   const categoryKey = slugToCategory(catSlug);
 
   const [resolvedKasa, setResolvedKasa] = useState<string | null>(null);
+  const [resolvedKod, setResolvedKod] = useState<string | null>(null);
   const [yillar, setYillar] = useState<YilStat[]>([]);
   const [total, setTotal] = useState(0);
   const [avgPuan, setAvgPuan] = useState<number | null>(null);
@@ -28,7 +29,8 @@ export default function KasaPage() {
     fetch(`/api/model-kasa-yillar/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${encodeURIComponent(kasaSlug)}`)
       .then((r) => r.json())
       .then((d) => {
-        setResolvedKasa(d.kasa);
+        setResolvedKasa(d.tip ?? d.kasa);
+        setResolvedKod(d.kod ?? d.kasa);
         setYillar(d.yillar ?? []);
         const t = (d.yillar ?? []).reduce((s: number, y: YilStat) => s + y.total, 0);
         setTotal(t);
@@ -53,7 +55,9 @@ export default function KasaPage() {
     );
   }
 
-  const kasaLabel = resolvedKasa ?? kasaSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const titleLabel = resolvedKod ?? kasaSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const tipLabel = resolvedKasa;
+  const hasKod = resolvedKod && resolvedKasa && resolvedKod !== resolvedKasa;
 
   return (
     <div className="min-h-screen">
@@ -73,7 +77,7 @@ export default function KasaPage() {
           <span>›</span>
           <Link href={`/${catSlug}/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`} className="hover:text-[#ff6b00]">{model}</Link>
           <span>›</span>
-          <span className="text-white font-semibold">{kasaLabel}</span>
+          <span className="text-white font-semibold">{titleLabel}</span>
         </nav>
 
         {/* Header */}
@@ -81,7 +85,10 @@ export default function KasaPage() {
           <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-widest mb-2">
             {brand} · {model} · KASA
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{kasaLabel}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-mono-num">{titleLabel}</h1>
+          {hasKod && (
+            <div className="text-base text-[#8b8b9e] mt-1">{tipLabel} kasası</div>
+          )}
           <div className="text-sm text-[#8b8b9e] mt-2 font-mono-num">
             {total.toLocaleString("tr-TR")} review · {yillar.length} yıl
           </div>
@@ -149,7 +156,7 @@ export default function KasaPage() {
               kategoriSlug={catSlug}
               marka={brand}
               model={model}
-              kasaKod={resolvedKasa ?? kasaLabel}
+              kasaKod={resolvedKod ?? titleLabel}
               yil={0}
               filterKasaTip={resolvedKasa ?? undefined}
             />

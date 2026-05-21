@@ -14,7 +14,6 @@ import { slugToCategory, CATEGORY_LABEL, CATEGORY_EMOJI } from "@/lib/categories
 import { getVehicleImage } from "@/lib/vehicle-images";
 import { getPersonality, TIP_RENKLERI } from "@/lib/vehicle-personalities";
 import { getVehicleInfo } from "@/lib/vehicle-info";
-import { getModelKasalari } from "@/lib/vehicles-data";
 
 type ApiReview = {
   id: string;
@@ -67,12 +66,14 @@ export default function ModelPage() {
   const [sikayetSay, setSikayetSay] = useState(0);
   const [imgError, setImgError] = useState(false);
   const [showIssue, setShowIssue] = useState(false);
-  const [kasaStats, setKasaStats] = useState<Array<{ kasa: string; total: number; avgPuan: number | null; sikayetOrani: number }>>([]);
+  const [kasaStats, setKasaStats] = useState<Array<{
+    kod: string; tip: string; yillar: [number, number] | null;
+    total: number; avgPuan: number | null; sikayetOrani: number;
+  }>>([]);
 
   const personality = getPersonality(brand, model);
   const tipColors = personality ? TIP_RENKLERI[personality.tip] : null;
   const vehicleInfo = getVehicleInfo(brand, model);
-  const kasalarFromData = getModelKasalari(brand, model);
 
   useEffect(() => {
     fetch(`/api/model-kasalar/${encodeURIComponent(brand)}/${encodeURIComponent(model)}`)
@@ -258,29 +259,30 @@ export default function ModelPage() {
         {/* KATMAN 1: Üretici iddiası */}
         {vehicleInfo && <ManufacturerCard info={vehicleInfo} />}
 
-        {/* Kasa seçimi (gövde tipi) */}
-        {(kasalarFromData.length > 0 || kasaStats.length > 0) && (
+        {/* Kasa seçimi — şasi kodu varsa (BMW E46/F30) öne çıkar, yoksa gövde tipi */}
+        {kasaStats.length > 0 && (
           <div className="mb-6">
             <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-widest mb-2">
-              KASA / GÖVDE TİPİ
+              KASA / ŞASİ
             </div>
             <div className="flex flex-wrap gap-2">
-              {(kasalarFromData.length > 0
-                ? kasalarFromData.map((k) => k.kod)
-                : kasaStats.map((k) => k.kasa)
-              ).map((kasa) => {
-                const stat = kasaStats.find((s) => s.kasa === kasa);
-                const slug = kasa.toLowerCase().replace(/\s+/g, "-");
+              {kasaStats.map((k, idx) => {
+                const slug = k.kod.toLowerCase().replace(/\s+/g, "-");
+                const hasKod = k.kod !== k.tip;
                 return (
                   <Link
-                    key={kasa}
+                    key={`${k.kod}-${k.tip}-${idx}`}
                     href={`/${catSlug}/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${encodeURIComponent(slug)}`}
-                    className="bg-[#12121a] border border-[#1e1e2e] hover:border-[#ff6b00] rounded-md px-4 py-3 transition-colors min-w-[110px]"
+                    className="bg-[#12121a] border border-[#1e1e2e] hover:border-[#ff6b00] rounded-md px-4 py-3 transition-colors min-w-[130px]"
                   >
-                    <div className="text-sm font-bold text-white">{kasa}</div>
+                    <div className="text-sm font-bold text-white font-mono-num">{k.kod}</div>
+                    <div className="text-[10px] text-[#8b8b9e] mt-0.5">
+                      {hasKod && <>{k.tip}{k.yillar && <> · {k.yillar[0]}-{k.yillar[1]}</>}</>}
+                      {!hasKod && k.yillar && <>{k.yillar[0]}-{k.yillar[1]}</>}
+                    </div>
                     <div className="text-[10px] font-mono-num text-[#8b8b9e] mt-1">
-                      {stat ? (
-                        <>★ {(stat.avgPuan ?? 0).toFixed(1)} · {stat.total} review</>
+                      {k.total > 0 ? (
+                        <>★ {(k.avgPuan ?? 0).toFixed(1)} · {k.total} review</>
                       ) : (
                         <span className="text-[#4a4a5e]">veri yok</span>
                       )}

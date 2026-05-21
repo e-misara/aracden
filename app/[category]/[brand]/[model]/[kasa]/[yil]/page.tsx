@@ -19,6 +19,7 @@ export default function YilPage() {
   const categoryKey = slugToCategory(catSlug);
 
   const [resolvedKasa, setResolvedKasa] = useState<string | null>(null);
+  const [resolvedKod, setResolvedKod] = useState<string | null>(null);
   const [stats, setStats] = useState<{ total: number; avgPuan: number | null; sikayetOrani: number }>({
     total: 0,
     avgPuan: null,
@@ -29,7 +30,8 @@ export default function YilPage() {
     fetch(`/api/model-kasa-yillar/${encodeURIComponent(brand)}/${encodeURIComponent(model)}/${encodeURIComponent(kasaSlug)}`)
       .then((r) => r.json())
       .then((d) => {
-        setResolvedKasa(d.kasa);
+        setResolvedKasa(d.tip ?? d.kasa);
+        setResolvedKod(d.kod ?? d.kasa);
         const y = (d.yillar ?? []).find((x: { yil: number }) => x.yil === yil);
         if (y) setStats({ total: y.total, avgPuan: y.avgPuan, sikayetOrani: y.sikayetOrani });
       });
@@ -46,7 +48,7 @@ export default function YilPage() {
     );
   }
 
-  const kasaLabel = resolvedKasa ?? kasaSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const kasaLabel = resolvedKod ?? kasaSlug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const sikColor =
     stats.sikayetOrani > 50 ? "#ff2d55" : stats.sikayetOrani > 30 ? "#ffd60a" : "#00d68f";
 

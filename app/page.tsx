@@ -23,25 +23,32 @@ export default function Home() {
   const [total, setTotal] = useState(15037);
   const [recentReviews, setRecentReviews] = useState<RecentReview[]>([]);
   const [trending, setTrending] = useState<SearchResult | null>(null);
+  const [trendingLoading, setTrendingLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/reviews?limit=1").then(r => r.json()).then(d => d.total && setTotal(d.total));
-    fetch("/api/reviews?limit=8").then(r => r.json()).then(d => setRecentReviews(d.reviews ?? []));
-    // "Bu Haftanın Aracı" — en çok yorumlanan modelin URL'i
-    fetch("/api/search?q=&limit=1").then(() => {});
-    fetch("/api/brands?limit=5&sort=totalReview").then(r => r.json()).then(d => {
-      const top = d.brands?.[0];
-      if (top?.enCokModel) {
-        setTrending({
-          marka: top.marka,
-          model: top.enCokModel,
-          kategori: top.kategori ?? "otomobil",
-          totalReview: top.totalReview,
-          avgPuan: top.avgPuan,
-          url: `/${top.kategori ?? "otomobil"}/${encodeURIComponent(top.marka)}/${encodeURIComponent(top.enCokModel)}`,
-        });
-      }
-    });
+    let cancelled = false;
+    Promise.all([
+      fetch("/api/reviews?limit=8").then((r) => r.json()),
+      fetch("/api/brands?limit=5&sort=totalReview").then((r) => r.json()),
+    ])
+      .then(([reviewsRes, brandsRes]) => {
+        if (cancelled) return;
+        if (reviewsRes?.total) setTotal(reviewsRes.total);
+        setRecentReviews(reviewsRes?.reviews ?? []);
+        const top = brandsRes?.brands?.[0];
+        if (top?.enCokModel) {
+          setTrending({
+            marka: top.marka,
+            model: top.enCokModel,
+            kategori: top.kategori ?? "otomobil",
+            totalReview: top.totalReview,
+            avgPuan: top.avgPuan,
+            url: `/${top.kategori ?? "otomobil"}/${encodeURIComponent(top.marka)}/${encodeURIComponent(top.enCokModel)}`,
+          });
+        }
+      })
+      .finally(() => { if (!cancelled) setTrendingLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -140,7 +147,14 @@ export default function Home() {
             <WeeklyTrending />
           </div>
           <div>
-            {trending && (
+            {trendingLoading && (
+              <div className="bg-[#12121a] border border-[#1e1e2e] rounded-xl p-5 h-full animate-pulse">
+                <div className="h-3 w-24 bg-[#1e1e2e] rounded mb-3" />
+                <div className="h-7 w-40 bg-[#1e1e2e] rounded mb-2" />
+                <div className="h-3 w-32 bg-[#1e1e2e] rounded" />
+              </div>
+            )}
+            {!trendingLoading && trending && (
               <div className="bg-gradient-to-br from-[#ff6b00]/20 to-transparent border border-[#ff6b00]/40 rounded-xl p-5 h-full">
                 <div className="text-[10px] font-mono-num text-[#ff6b00] uppercase tracking-widest mb-2">
                   ⭐ BU HAFTANIN ARACI

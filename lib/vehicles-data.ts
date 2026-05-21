@@ -2,6 +2,8 @@
 
 export interface KasaTipi {
   tip: string;
+  kod?: string; // BMW E46/F30 gibi şasi kodu — varsa URL slug'ı buradan üretilir
+  yillar?: [number, number]; // şasi üretim yılı aralığı
   motorlar?: string[];
   yakit?: string[];
   vites?: string[];
@@ -122,11 +124,30 @@ const otomobilMarkalari: SahibindenMarka[] = [
     { model: "Mulsanne", slug: "mulsanne", kasaTipleri: [{ tip: "Sedan" }] },
   ]},
   { marka: "BMW", slug: "bmw", modeller: [
-    { model: "1 Serisi", slug: "1-serisi", kasaTipleri: [{ tip: "Hatchback" }, { tip: "Sedan" }] },
+    { model: "1 Serisi", slug: "1-serisi", kasaTipleri: [
+      { kod: "E87", tip: "Hatchback", yillar: [2004, 2011] },
+      { kod: "F20", tip: "Hatchback", yillar: [2011, 2019] },
+      { kod: "F40", tip: "Hatchback", yillar: [2019, 2025] },
+      { tip: "Sedan" },
+    ] },
     { model: "2 Serisi", slug: "2-serisi", kasaTipleri: [{ tip: "Coupe" }, { tip: "Cabrio" }, { tip: "Active Tourer" }, { tip: "Gran Tourer" }] },
-    { model: "3 Serisi", slug: "3-serisi", kasaTipleri: [{ tip: "Sedan" }, { tip: "Touring" }, { tip: "Coupe" }, { tip: "Cabrio" }] },
+    { model: "3 Serisi", slug: "3-serisi", kasaTipleri: [
+      { kod: "E46", tip: "Sedan", yillar: [1998, 2005] },
+      { kod: "E46", tip: "Coupe", yillar: [1998, 2005] },
+      { kod: "E90", tip: "Sedan", yillar: [2005, 2011] },
+      { kod: "E92", tip: "Coupe", yillar: [2005, 2011] },
+      { kod: "F30", tip: "Sedan", yillar: [2011, 2019] },
+      { kod: "G20", tip: "Sedan", yillar: [2019, 2025] },
+      { tip: "Touring" },
+      { tip: "Cabrio" },
+    ] },
     { model: "4 Serisi", slug: "4-serisi", kasaTipleri: [{ tip: "Coupe" }, { tip: "Cabrio" }, { tip: "Gran Coupe" }] },
-    { model: "5 Serisi", slug: "5-serisi", kasaTipleri: [{ tip: "Sedan" }, { tip: "Touring" }] },
+    { model: "5 Serisi", slug: "5-serisi", kasaTipleri: [
+      { kod: "E60", tip: "Sedan", yillar: [2003, 2010] },
+      { kod: "F10", tip: "Sedan", yillar: [2010, 2017] },
+      { kod: "G30", tip: "Sedan", yillar: [2017, 2025] },
+      { tip: "Touring" },
+    ] },
     { model: "6 Serisi", slug: "6-serisi", kasaTipleri: [{ tip: "Coupe" }, { tip: "Cabrio" }, { tip: "Gran Coupe" }, { tip: "Gran Turismo" }] },
     { model: "7 Serisi", slug: "7-serisi", kasaTipleri: [{ tip: "Sedan" }] },
     { model: "8 Serisi", slug: "8-serisi", kasaTipleri: [{ tip: "Coupe" }, { tip: "Cabrio" }, { tip: "Gran Coupe" }] },
@@ -1144,14 +1165,38 @@ function buildMarkalar(markalar: SahibindenMarka[]): Marka[] {
   }));
 }
 
-export function getModelKasalari(marka: string, model: string): { kod: string; motorlar?: string[] }[] {
+export type ModelKasa = {
+  kod: string;         // URL slug & gösterim — kod yoksa tip kullanılır
+  tip: string;         // DB'deki kasaTip karşılığı (Sedan/SUV/...)
+  yillar?: [number, number];
+  motorlar?: string[];
+};
+
+export function getModelKasalari(marka: string, model: string): ModelKasa[] {
   for (const k of Object.values(vehiclesData)) {
     const markalar = "markalar" in k ? k.markalar : k.altKategoriler.flatMap((a) => a.markalar);
     const m = markalar.find((mm) => mm.marka === marka);
     const mo = m?.modeller.find((mmm) => mmm.model === model);
-    if (mo) return mo.kasaTipleri.map((kk) => ({ kod: kk.tip, motorlar: kk.motorlar }));
+    if (mo) {
+      return mo.kasaTipleri.map((kk) => ({
+        kod: kk.kod ?? kk.tip,
+        tip: kk.tip,
+        yillar: kk.yillar,
+        motorlar: kk.motorlar,
+      }));
+    }
   }
   return [];
+}
+
+export function resolveKasa(marka: string, model: string, slug: string): ModelKasa | null {
+  const kasalar = getModelKasalari(marka, model);
+  const lower = slug.toLowerCase();
+  return (
+    kasalar.find((k) => k.kod.toLowerCase().replace(/\s+/g, "-") === lower) ??
+    kasalar.find((k) => k.tip.toLowerCase().replace(/\s+/g, "-") === lower) ??
+    null
+  );
 }
 
 export const KATEGORILER: Kategori[] = [

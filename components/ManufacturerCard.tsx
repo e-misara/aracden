@@ -35,11 +35,11 @@ export default function ManufacturerCard({ info }: { info: VehicleInfo & { isPla
             {info.marka.toUpperCase()} İDDİASI · ÜRETİCİ VERİSİ
           </div>
         </div>
-        {info.isPlaceholder ? (
+        {info.isPlaceholder && process.env.NODE_ENV !== "production" ? (
           <span className="text-[10px] font-mono-num text-[#ffd60a] uppercase">
-            ⓘ PLACEHOLDER
+            ⓘ PLACEHOLDER (dev)
           </span>
-        ) : info.turkiye_populerlik ? (
+        ) : !info.isPlaceholder && info.turkiye_populerlik ? (
           <span className="text-[10px] font-mono-num text-[#4a4a5e] uppercase">
             TR · {info.turkiye_populerlik}
           </span>
