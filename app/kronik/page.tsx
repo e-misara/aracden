@@ -14,6 +14,15 @@ type Brand = {
   enCokModel: string | null;
 };
 
+type HashtagCount = {
+  tag: string;
+  label: string;
+  emoji: string;
+  color: string;
+  count: number;
+  sentiment: string;
+};
+
 type Review = {
   id: string;
   marka: string;
@@ -56,9 +65,9 @@ export default function KronikPage() {
   const [topBrands, setTopBrands] = useState<Brand[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hashtags, setHashtags] = useState<HashtagCount[]>([]);
 
   useEffect(() => {
-    // En şikayet edilen markalar
     fetch("/api/brands?sort=sikayetOrani&limit=30")
       .then((r) => r.json())
       .then((d) => {
@@ -66,6 +75,9 @@ export default function KronikPage() {
         setTopBrands(arr.slice(0, 30));
         if (arr[0]) setSelectedBrand(arr[0].marka);
       });
+    fetch("/api/hashtags")
+      .then((r) => r.json())
+      .then((d) => setHashtags(d.hashtags ?? []));
   }, []);
 
   useEffect(() => {
@@ -104,6 +116,37 @@ export default function KronikPage() {
             Marka seçin, dert haritasını görün.
           </p>
         </div>
+
+        {/* Hashtag bulutu */}
+        {hashtags.length > 0 && (
+          <div className="mb-8 bg-[#12121a] border border-[#1e1e2e] rounded-md p-5">
+            <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-widest mb-3">
+              EN POPÜLER HASHTAG'LER
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {hashtags.slice(0, 20).map((h) => {
+                const maxCount = hashtags[0]?.count ?? 1;
+                const scale = Math.max(0.85, Math.min(1.4, 0.85 + (h.count / maxCount) * 0.6));
+                return (
+                  <span
+                    key={h.tag}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-xs"
+                    style={{
+                      borderColor: `${h.color}50`,
+                      backgroundColor: `${h.color}15`,
+                      color: h.color,
+                      fontSize: `${scale * 0.75}rem`,
+                    }}
+                  >
+                    <span>{h.emoji}</span>
+                    <span className="font-semibold">{h.label}</span>
+                    <span className="font-mono-num opacity-70">{h.count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Brand selector */}

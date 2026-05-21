@@ -23,11 +23,22 @@ type TopBrand = {
   enCokModel: string | null;
 };
 
+type SearchResult = {
+  marka: string;
+  model: string;
+  kategori: string;
+  totalReview: number;
+  avgPuan: number | null;
+  url: string;
+};
+
 export default function Home() {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [stats, setStats] = useState<Stats>({ total: 12485, brands: 80, recalls: 170, complaintRate: 0.38 });
   const [topBrands, setTopBrands] = useState<TopBrand[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     fetch("/api/brands?limit=12&sort=totalReview")
@@ -56,10 +67,27 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
+  // Debounce search query
+  useEffect(() => {
+    if (q.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(q.trim())}&limit=8`)
+        .then((r) => r.json())
+        .then((d) => setSearchResults(d.results ?? []))
+        .catch(() => setSearchResults([]));
+    }, 200);
+    return () => clearTimeout(t);
+  }, [q]);
+
   const handleSearch = () => {
-    if (!q.trim()) return;
-    // Marka aramaya yönlendir
-    router.push(`/otomobil?q=${encodeURIComponent(q.trim())}`);
+    if (searchResults.length > 0) {
+      router.push(searchResults[0].url);
+    } else if (q.trim()) {
+      router.push(`/otomobil`);
+    }
   };
 
   return (
@@ -83,17 +111,51 @@ export default function Home() {
             </p>
 
             {/* Search */}
-            <div className="flex gap-2 max-w-xl">
+            <div className="flex gap-2 max-w-xl relative">
               <div className="flex-1 relative">
                 <input
                   type="text"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   placeholder="Marka, model veya sorun ara..."
                   className="w-full bg-[#12121a] border border-[#1e1e2e] focus:border-[#ff6b00] rounded-md px-4 py-3.5 text-sm text-white placeholder-[#4a4a5e] outline-none transition-colors"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4a4a5e]">⌘K</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4a4a5e] text-xs font-mono-num">⌘K</span>
+
+                {/* Dropdown */}
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-[#12121a] border border-[#1e1e2e] rounded-md shadow-2xl overflow-hidden z-50 max-h-96 overflow-y-auto">
+                    {searchResults.map((r, i) => (
+                      <Link
+                        key={i}
+                        href={r.url}
+                        className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#1a1a26] transition-colors border-b border-[#1e1e2e] last:border-b-0"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-white truncate">
+                            {r.marka} <span className="text-[#8b8b9e]">·</span> {r.model}
+                          </div>
+                          <div className="text-[10px] font-mono-num text-[#4a4a5e] uppercase tracking-wide">
+                            {r.kategori}
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xs font-mono-num text-[#8b8b9e]">
+                            {r.totalReview} review
+                          </div>
+                          {r.avgPuan != null && (
+                            <div className="text-xs font-mono-num text-[#ffd60a]">
+                              ★ {r.avgPuan.toFixed(1)}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleSearch}

@@ -23,6 +23,9 @@ export default function Navbar() {
           <Link href="/enler" className="px-3 py-1.5 rounded text-[#8b8b9e] hover:text-white hover:bg-[#1a1a26] transition-colors">
             🏆 Enler
           </Link>
+          <Link href="/karsilastir" className="px-3 py-1.5 rounded text-[#8b8b9e] hover:text-white hover:bg-[#1a1a26] transition-colors">
+            ⚖️ Karşılaştır
+          </Link>
           {session ? (
             <>
               <Link

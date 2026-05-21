@@ -8,7 +8,9 @@ export async function GET(req: NextRequest) {
   const sort = sp.get("sort") ?? "totalReview"; // totalReview | avgPuan | sikayetOrani
   const limit = Math.min(200, Math.max(1, parseInt(sp.get("limit") ?? "100")));
 
-  const whereCat = kategori ? `WHERE "kategoriSlug" = $1` : "";
+  // Genel / Bilinmiyor / boş markaları her zaman filtrele
+  const baseWhere = `"marka" NOT IN ('Genel', 'Bilinmiyor', '') AND "marka" IS NOT NULL`;
+  const whereCat = kategori ? `WHERE ${baseWhere} AND "kategoriSlug" = $1` : `WHERE ${baseWhere}`;
   const params = kategori ? [kategori] : [];
 
   // Brand stats — tek SQL
