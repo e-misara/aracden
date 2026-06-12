@@ -106,3 +106,29 @@ model Review {
   @@index([kategoriSlug])
   @@index([izlenme(sort: Desc)])
 }
+
+// 2. el araç ilanlarından toplanan fiyat verisi.
+// EUR cinsinden saklanır, TL gösterim için lib/currency.ts üzerinden çevrilir.
+model VehiclePrice {
+  id        String   @id @default(cuid())
+  marka     String
+  model     String
+  yil       Int
+  km        Int?
+  fiyatEur  Float
+  motor     String?
+  gucHp     Int?
+  vites     String?
+  yakit     String?
+  kasa      String?
+  renk      String?
+  sehir     String?
+  ulke      String
+  kaynak    String   // "mobile.de" | "arabam.com" | ...
+  ilanUrl   String?  @unique
+  ilanTarih String?
+  tarih     DateTime @default(now())
+
+  @@index([marka, model, yil])
+  @@index([kaynak])
+}
