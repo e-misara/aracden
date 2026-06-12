@@ -10,7 +10,8 @@
     "prisma": "prisma",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "import-prices": "tsx scripts/import-prices.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",

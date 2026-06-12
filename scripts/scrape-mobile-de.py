@@ -23,6 +23,7 @@ import time
 import urllib.parse
 from pathlib import Path
 from statistics import median
+from typing import Optional, List, Dict
 
 try:
     import requests
@@ -93,14 +94,14 @@ def search_url(marka: str, model: str, page: int = 1) -> str:
     return "https://suchen.mobile.de/fahrzeuge/search.html?" + urllib.parse.urlencode(params)
 
 
-def parse_int(s: str | None) -> int | None:
+def parse_int(s: Optional[str]) -> Optional[int]:
     if not s:
         return None
     digits = re.sub(r"[^\d]", "", s)
     return int(digits) if digits else None
 
 
-def parse_listing(card) -> dict | None:
+def parse_listing(card) -> Optional[Dict]:
     """
     Tek arama-sonucu kartından alanları çıkar.
     mobile.de'nin DOM'u zaman zaman değişir — bu fonksiyon kırıldığında
@@ -143,9 +144,9 @@ def parse_listing(card) -> dict | None:
     }
 
 
-def fetch_search(marka: str, model: str) -> list[dict]:
+def fetch_search(marka: str, model: str) -> List[Dict]:
     """Bir marka/model için tüm sayfaları gez, ilanları topla."""
-    listings = []
+    listings: List[Dict] = []
     session = requests.Session()
     session.headers.update(HEADERS)
 
@@ -191,12 +192,12 @@ def fetch_search(marka: str, model: str) -> list[dict]:
     return listings
 
 
-def calc_stats(listings: list[dict]) -> dict:
+def calc_stats(listings: List[Dict]) -> Dict:
     if not listings:
         return {"ilan_sayisi": 0}
     fiyatlar = [x["fiyat_eur"] for x in listings if x.get("fiyat_eur")]
     kms = [x["km"] for x in listings if x.get("km")]
-    motors: dict[str, int] = {}
+    motors: Dict[str, int] = {}
     for x in listings:
         m = x.get("motor") or x.get("title", "").split(maxsplit=2)[2:3]
         key = (m if isinstance(m, str) else " ".join(m)) if m else None
